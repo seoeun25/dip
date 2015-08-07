@@ -1,0 +1,20 @@
+{"namespace": "com.nexr.dip.avro.schema",
+  "type": "record",
+  "name": "employee",
+  "fields": [
+      {"name": "name", "type": "string"},
+      {"name": "favorite_number",  "type": ["int", "null"]},
+      {"name": "favorite_color", "type": ["string", "null"]},
+      {"name": "wrk_dt", "type": "long"},
+      {
+         "name": "header",
+         "type": {
+             "type" : "record",
+             "name" : "headertype",
+             "fields" : [
+                 {"name": "time", "type": "long"}
+             ]
+         }
+      }
+  ]
+ }

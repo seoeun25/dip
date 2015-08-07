@@ -1,0 +1,18 @@
+{"namespace": "com.nexr.dip.avro.schema",
+ "type": "record",
+ "name": "gpx_port",
+ "fields": [
+     {"name": "nescode", "type": "string"},
+     {"name": "equip_ip", "type": ["string", "null"]},
+     {"name": "port", "type": "string"},
+     {"name": "setup_val", "type": ["string", "null"]},
+     {"name": "nego", "type": ["string", "null"]},
+     {"name": "setup_speed", "type": ["string", "null"]},
+     {"name": "curnt_speed", "type": ["string", "null"]},
+     {"name": "mac_cnt", "type": ["string", "null"]},
+     {"name": "downl_speed_val", "type": ["string", "null"]},
+     {"name": "etc_extrt_info", "type": ["string", "null"]},
+     {"name": "wrk_dt", "type": "long"},
+     {"name": "src_info", "type": "string"}
+ ]
+}

@@ -1,0 +1,22 @@
+{"namespace": "com.nexr.dip.avro.schema",
+ "type": "record",
+ "name": "ftthif",
+ "fields": [
+     {"name": "neosscode", "type": "string"},
+     {"name": "ifname",  "type": "string"},
+     {"name": "onuid", "type": "string"},
+     {"name": "ontmac", "type": "string"},
+     {"name": "extrainfo", "type": ["string", "null"]},
+     {"name": "wrk_dt", "type": "long"},
+     {
+          "name": "header",
+          "type": {
+              "type" : "record",
+              "name" : "headertype",
+              "fields" : [
+                  {"name": "time", "type": "long"}
+              ]
+          }
+     }
+ ]
+}
