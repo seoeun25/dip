@@ -11,11 +11,12 @@
     <properties>
         <oozie.version>4.1.0</oozie.version>
         <hadoop.version>2.6.0</hadoop.version>
-        <hive.version>0.11.0</hive.version>
+        <hive.version>1.2.0</hive.version>
         <avro.version>1.7.5</avro.version>
         <camus.version>0.1.0-SNAPSHOT</camus.version>
         <kafka.version>0.8.2.0</kafka.version>
         <openjpa.version>2.2.2</openjpa.version>
+        <jersey.version>1.9</jersey.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>

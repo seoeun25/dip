@@ -25,6 +25,45 @@
             </includes>
         </fileSet>
 
+        <!-- for tool -->
+        <fileSet>
+            <directory>${basedir}/../tool/bin</directory>
+            <outputDirectory>dip-server-${project.version}/bin</outputDirectory>
+            <includes>
+                <include>*</include>
+            </includes>
+            <fileMode>0755</fileMode>
+        </fileSet>
+
+        <fileSet>
+            <directory>${basedir}/../tool/target/</directory>
+            <outputDirectory>dip-server-${project.version}/lib</outputDirectory>
+            <includes>
+                <include>*.jar</include>
+            </includes>
+            <fileMode>0644</fileMode>
+        </fileSet>
+
+        <!-- for oozie-sharelib -->
+        <fileSet>
+            <directory>${basedir}/target/classes</directory>
+            <outputDirectory>dip-server-${project.version}/oozie-sharelib</outputDirectory>
+            <includes>
+                <include>oozie-sharelib-readme.txt</include>
+            </includes>
+            <fileMode>0755</fileMode>
+        </fileSet>
+
+
+        <fileSet>
+            <directory>${basedir}/../client/target/</directory>
+            <outputDirectory>dip-server-${project.version}/lib</outputDirectory>
+            <includes>
+                <include>*.jar</include>
+            </includes>
+            <fileMode>0644</fileMode>
+        </fileSet>
+
     </fileSets>
 
     <dependencySets>
