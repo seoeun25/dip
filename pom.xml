@@ -21,8 +21,9 @@
     </properties>
 
     <modules>
-	    <module>client</module>
+	<module>client</module>
         <module>example</module>
+        <module>server</module>
     </modules>
 
     <dependencyManagement>
@@ -172,6 +173,12 @@
             </dependency>
 
             <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>2.4</version>
+            </dependency>
+
+            <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>4.10</version>
@@ -243,6 +250,14 @@
                     <altSnapshotDeploymentRepository>
                         internal.repo::default::file:///Users/seoeun/maven-repo/maven-repo/snapshots
                     </altSnapshotDeploymentRepository>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <descriptors>
+                        <descriptor>src/main/assemblies/empty.xml</descriptor>
+                    </descriptors>
                 </configuration>
             </plugin>
         </plugins>

@@ -1,0 +1,38 @@
+<assembly>
+    <id>distro</id>
+    <formats>
+        <format>dir</format>
+        <format>tar.gz</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+
+    <fileSets>
+        <!-- Distro files, readme, licenses, etc -->
+        <fileSet>
+            <directory>${basedir}/bin</directory>
+            <outputDirectory>dip-server-${project.version}/bin</outputDirectory>
+            <includes>
+                <include>*</include>
+            </includes>
+            <fileMode>0755</fileMode>
+        </fileSet>
+
+        <fileSet>
+            <directory>${basedir}/conf</directory>
+            <outputDirectory>dip-server-${project.version}/conf</outputDirectory>
+            <includes>
+                <include>*</include>
+            </includes>
+        </fileSet>
+
+    </fileSets>
+
+    <dependencySets>
+        <dependencySet>
+            <outputDirectory>dip-server-${project.version}/lib</outputDirectory>
+            <unpack>false</unpack>
+            <scope>compile</scope>
+        </dependencySet>
+    </dependencySets>
+
+</assembly>
