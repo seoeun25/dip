@@ -1,0 +1,11 @@
+{"namespace": "com.nexr.dip.avro.schema",
+ "type": "record",
+ "name": "Employee",
+ "fields": [
+     {"name": "eventtime", "type": "long"},
+     {"name": "origin", "type": "string"},
+     {"name": "name", "type": "string"},
+     {"name": "favorite_number",  "type": ["int", "null"]},
+     {"name": "favorite_color", "type": ["string", "null"]}
+ ]
+}

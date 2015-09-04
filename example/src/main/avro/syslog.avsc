@@ -1,10 +1,8 @@
 {"namespace": "com.nexr.dip.avro.schema",
  "type": "record",
- "name": "employee",
+ "name": "syslog",
  "fields": [
-     {"name": "name", "type": "string"},
-     {"name": "favorite_number", "type": ["string", "null"]},
-     {"name": "favorite_color", "type": ["string", "null"]},
+     {"name": "message", "type": ["string", "null"]},
      {"name": "wrk_dt", "type": "long"},
      {"name": "src_info", "type": "string"},
      {

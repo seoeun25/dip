@@ -21,12 +21,6 @@
             <groupId>com.nexr</groupId>
             <artifactId>dip-client</artifactId>
             <version>0.9-SNAPSHOT</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.hadoop</groupId>
-                    <artifactId>hadoop-common</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <!-- logging -->
@@ -67,6 +61,14 @@
                 <configuration>
                     <source>1.7</source>
                     <target>1.7</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <descriptors>
+                        <descriptor>../src/main/assemblies/empty.xml</descriptor>
+                    </descriptors>
                 </configuration>
             </plugin>
         </plugins>
