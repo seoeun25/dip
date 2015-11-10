@@ -25,6 +25,7 @@
 	<module>client</module>
         <module>example</module>
         <module>server</module>
+        <module>tool</module>
     </modules>
 
     <dependencyManagement>
