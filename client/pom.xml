@@ -237,6 +237,23 @@
                     </descriptors>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.10.3</version>
+                <configuration>
+                    <name>PDF</name>
+                    <description>This is my Documentation on PDF.</description>
+                    <destDir>pdf</destDir>
+                    <doclet>com.tarsec.javadoc.pdfdoclet.PDFDoclet</doclet>
+                    <docletPath>${basedir}/../build_plugin/pdfdoclet-1.0.3-all.jar</docletPath>
+                    <!--<docletPath>/Users/seoeun/tools/maven_plugins/pdfdoclet-1.0.3/jar/pdfdoclet-1.0.3-all.jar</docletPath>-->
+                    <useStandardDocletOptions>false</useStandardDocletOptions>
+                    <additionalparam>
+                        -pdf javadoc.pdf
+                    </additionalparam>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
