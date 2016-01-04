@@ -52,7 +52,7 @@ public class LoadResult {
     private long count;
     @Column(name = "error_count", nullable = false)
     private long errorCount = -1;
-    @Column(name = "result_files", length = 6000)
+    @Column(name = "result_files", length = 12000)
     private String resultFiles;
     @Column(name = "status")
     private String statusStr;
