@@ -70,8 +70,8 @@ public class WFGeneratorTest {
         File shellFile = new File("recovery-topic-retention.sh");
         FileWriter fileWriter = null;
 
-        //long retention = 259200000l; // 3days
-        long retention = 1000 * 60 * 60 * 24 * 3;
+        //long retention = 345600000L; // 4days
+        long retention = 1000 * 60 * 60 * 24 * 4;
 //        String template = "/usr/lib/kafka/bin/kafka-topics.sh --zookeeper aih012:2181 --topic ${topic} --alter --config " +
 //                "retention.ms=604800000";
         String template = "/usr/lib/kafka/bin/kafka-topics.sh --zookeeper aih012:2181 --topic ${topic} --alter --config " +
