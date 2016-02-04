@@ -28,6 +28,7 @@ public class WFGenerator {
     public static final String DIP_NAMENODE = "${dipNameNode}";
     public static final String DIP_JOBTRACKER = "${dipJobTracker}";
     public static final String DIP_HIVESERVER = "${dipHiveServer}";
+    public static final String DIP_USER_NAME = "${userName}";
 
     private DipContext dipContext;
 
@@ -44,6 +45,7 @@ public class WFGenerator {
     private String etlResultDir;
     private String etlDestinationDir;
     private String kafkaPullSize;
+    private String userName;
 
     private String avroSrcInfos;
     private String textSrcInfos;
@@ -70,6 +72,8 @@ public class WFGenerator {
         nameNode = context.getConfig(DipContext.DIP_NAMENODE);
         jobTracker = context.getConfig(DipContext.DIP_JOBTRACKER);
         hiveServer = context.getConfig(DipContext.DIP_HIVESERVER);
+        userName = context.getConfig(DipContext.DIP_USER_NAME);
+
         etlResultDir = context.getConfig(DipContext.DIP_ETL_COUNT_DIR);
         etlDestinationDir = context.getConfig(DipContext.DIP_ETL_DESTINATION_PATH);
         kafkaPullSize = context.getConfig(DipContext.DIP_KAFKA_PULL_SIZE);
@@ -220,6 +224,9 @@ public class WFGenerator {
             }
             if (line.contains(DIP_HIVESERVER)) {
                 line = line.replace(DIP_HIVESERVER, hiveServer);
+            }
+            if (line.contains(DIP_USER_NAME)) {
+                line = line.replace(DIP_USER_NAME, userName);
             }
             if (line.contains(ETL_COUNT_DIR)) {
                 line = line.replace(ETL_COUNT_DIR, etlResultDir);

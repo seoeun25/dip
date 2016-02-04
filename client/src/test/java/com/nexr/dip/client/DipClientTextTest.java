@@ -1,6 +1,7 @@
 package com.nexr.dip.client;
 
 import com.nexr.dip.DipException;
+import com.nexr.dip.common.Utils;
 import com.nexr.dip.conf.Context;
 import com.nexr.dip.producer.Producer;
 import com.nexr.dip.record.DipRecordBase;
@@ -49,7 +50,7 @@ public class DipClientTextTest {
         properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         properties.put(ProducerConfig.BLOCK_ON_BUFFER_FULL_CONFIG, "false");
         properties.put(ProducerConfig.ACKS_CONFIG, "all");
-        //properties.put(Configurable.SCHEMAREGISTRY_CLASS, schemaRegistryClass); //com.seoeun.schemaregistry.AvroSchemaRegistry
+        //properties.put(Configurable.SCHEMAREGISTRY_CLASS, schemaRegistryClass); //com.nexr.schemaregistry.AvroSchemaRegistry
         //properties.put(Configurable.SCHEMAREGIDTRY_URL, "http://localhost:18181/avro-repo");
         //properties.put(KafkaAvroMessageEncoder.KAFKA_MESSAGE_CODER_SCHEMA_REGISTRY_CLASS, schemaRegistryClass);
         return properties;
@@ -77,6 +78,59 @@ public class DipClientTextTest {
                 e.printStackTrace();
             }
         }
+    }
+
+    /**
+     * Send the string as is, not added timestamp.
+     */
+    @Test
+    public void sendStringAsisTest() {
+
+        String srcInfo = "sip";
+
+        for (int i = 0; i < 10; i++) {
+            long time = System.currentTimeMillis();
+            String timeLable = Utils.formatTime(time, "yyyy-MM-dd", "UTC");
+            timeLable = timeLable + "T" + Utils.formatTime(time, "hh:mm:ss", "UTC") + "Z";
+            String timeIp = Utils.formatTime(time, "hh.mm", "UTC");
+
+            timeIp = String.valueOf((i + 1) % 10) + "." + timeIp;
+            int packet = 14 + (i % 10) ;
+            String msg = "{\"timestamp\": \"" + timeLable + "\", \"sip\": \"a" + timeIp + "\", \"packet_total\": \"" + packet +
+                    "\"}";
+
+//            if ((i + 1) % 2 == 0) {
+//                msg = "{\"timestamp\": \"" + timeLable + "\", \"sip\": \"a." + timeIp + "\", \"packet_total\": \"14\"}";
+//            } else {
+//                msg = "{\"timestamp\": \"" + timeLable + "\", \"sip\": \"b." + timeIp + "\", \"packet_total\": \"10\"}";
+//            }
+
+            GenericRecord record = new GenericData.Record(DipClient.TEXT_FORMAT_SCHEMA);
+            record.put(DipRecordBase.MESSAGE_FIELD, msg);
+
+            DipRecordBase<String> dipRecordBase = new DipRecordBase(srcInfo, record, DipClient.MESSAGE_TYPE.TEXT);
+            try {
+                dipClient.send(dipRecordBase);
+                Thread.sleep(100);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Test
+    public void testSip() {
+
+        try {
+            for (int i = 0; i < 100; i++) {
+                sendStringAsisTest();
+                Thread.sleep(1000 * 60);
+                System.out.println("---- send test sip data : " + i);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
     private long getTime(int year, int month, int day, int hour, int minute) {

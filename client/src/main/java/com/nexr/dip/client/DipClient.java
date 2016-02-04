@@ -252,8 +252,8 @@ public class DipClient<D> implements Configurable {
                 map.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
                 map.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
                 map.put(ProducerConfig.BLOCK_ON_BUFFER_FULL_CONFIG, "false");
-                map.put(Configurable.SCHEMAREGISTRY_CLASS, "com.seoeun.schemaregistry.AvroSchemaRegistry");
-                map.put(KafkaAvroMessageEncoder.KAFKA_MESSAGE_CODER_SCHEMA_REGISTRY_CLASS, "com.seoeun.schemaregistry.AvroSchemaRegistry");
+                map.put(Configurable.SCHEMAREGISTRY_CLASS, "com.nexr.schemaregistry.AvroSchemaRegistry");
+                map.put(KafkaAvroMessageEncoder.KAFKA_MESSAGE_CODER_SCHEMA_REGISTRY_CLASS, "com.nexr.schemaregistry.AvroSchemaRegistry");
                 map.put("partitioner.class", "kafka.producer.ByteArrayPartitioner");
                 return map;
             }
@@ -275,8 +275,8 @@ public class DipClient<D> implements Configurable {
             map.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
             map.put(ProducerConfig.BLOCK_ON_BUFFER_FULL_CONFIG, "false");
             map.put(ProducerConfig.ACKS_CONFIG, "all");
-            map.put(Configurable.SCHEMAREGISTRY_CLASS, "com.seoeun.schemaregistry.AvroSchemaRegistry");
-            map.put(KafkaAvroMessageEncoder.KAFKA_MESSAGE_CODER_SCHEMA_REGISTRY_CLASS, "com.seoeun.schemaregistry.AvroSchemaRegistry");
+            map.put(Configurable.SCHEMAREGISTRY_CLASS, "com.nexr.schemaregistry.AvroSchemaRegistry");
+            map.put(KafkaAvroMessageEncoder.KAFKA_MESSAGE_CODER_SCHEMA_REGISTRY_CLASS, "com.nexr.schemaregistry.AvroSchemaRegistry");
             map.put("partitioner.class", "kafka.producer.ByteArrayPartitioner");
             return map;
         }

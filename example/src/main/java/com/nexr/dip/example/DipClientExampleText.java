@@ -29,7 +29,7 @@ public class DipClientExampleText {
 
         String baseUrl = "localhost:9092";
         String topic = "hello";
-        String schemaRegistryUrl = "http://localhost:18181/schemarepo";
+        String schemaRegistryUrl = "http://localhost:18181/repo";
         if (args.length != 0) {
             baseUrl = args[0];
         }

@@ -3,7 +3,6 @@ package com.nexr.dip.tool;
 import com.linkedin.camus.etl.kafka.coders.KafkaAvroMessageEncoder;
 import com.nexr.dip.DipException;
 import com.nexr.dip.client.DipClient;
-import com.nexr.dip.client.DummySchemaRegistry;
 import com.nexr.dip.common.Utils;
 import com.nexr.dip.conf.Configurable;
 import com.nexr.dip.loader.ScheduledService;
@@ -28,10 +27,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -46,65 +43,52 @@ public class MessageGenerator {
     public static final String CONCURRENT = "concurrent";
     public static final String QUEUE = "queue";
     public static final String SCHEMA_REGISTRY = "schemaregistry";
+    public static final String SCHEMA_REPO = "schemarepo";
     public static final String TYPE = "type";
     public static final String BATCH_SIZE = "batchsize";
     public static final String BUFFER_SIZE = "buffersize";
     public static final String FILE = "file";
+    public static final String INIT_TIME = "inittime";
+    public static final String VERBOSE = "verbose";
     private static long startTime;
     private final String DUMMY_SCHEMA_REGISTRY = "com.nexr.dip.client.DummySchemaRegistry";
-    private final String AVRO_SCHEMA_REGISTRY = "com.seoeun.schemaregistry.AvroSchemaRegistry";
+    private final String AVRO_SCHEMA_REGISTRY = "com.nexr.schemaregistry.AvroSchemaRegistry";
     private String topic;
     private int maxCount = 1000;
     private int concurrent = 5;
     private int queueSzie = 1000000; //4g mem
     private long batchSize = 16384;
     private long bufferSize = 33554432;
+    private long initTime = 0l;
+    private long waitTime = 5;
     private DipClient dipClient;
     private DipRecordBase<GenericRecord> dipRecordBase;
+    private DipClient.MESSAGE_TYPE messageType = DipClient.MESSAGE_TYPE.AVRO;
     private Schema schema;
     private AtomicInteger recordCount = new AtomicInteger(0);
     private AtomicInteger sendCount = new AtomicInteger(0);
     private AtomicInteger failCount = new AtomicInteger(0);
     private Map<String, String> configMap = new HashMap<String, String>();
     private ExecutorService executorService;
-    private BlockingQueue<GenericRecord> blockingQueue;
     private boolean finished;
-
-    private String gpx_port_schema = "{\"namespace\": \"com.nexr.dip.avro.schema\",\n" +
-            " \"type\": \"record\",\n" +
-            " \"name\": \"gpx_port\",\n" +
-            " \"fields\": [\n" +
-            "     {\"name\": \"nescode\", \"type\": \"string\"},\n" +
-            "     {\"name\": \"equip_ip\", \"type\": [\"string\", \"null\"]},\n" +
-            "     {\"name\": \"port\", \"type\": \"string\"},\n" +
-            "     {\"name\": \"setup_val\", \"type\": [\"string\", \"null\"]},\n" +
-            "     {\"name\": \"nego\", \"type\": [\"string\", \"null\"]},\n" +
-            "     {\"name\": \"setup_speed\", \"type\": [\"string\", \"null\"]},\n" +
-            "     {\"name\": \"curnt_speed\", \"type\": [\"string\", \"null\"]},\n" +
-            "     {\"name\": \"mac_cnt\", \"type\": [\"string\", \"null\"]},\n" +
-            "     {\"name\": \"downl_speed_val\", \"type\": [\"string\", \"null\"]},\n" +
-            "     {\"name\": \"etc_extrt_info\", \"type\": [\"string\", \"null\"]},\n" +
-            "     {\"name\": \"wrk_dt\", \"type\": \"long\"},\n" +
-            "     {\"name\": \"src_info\", \"type\": \"string\"},\n" +
-            "     {\n" +
-            "         \"name\": \"header\",\n" +
-            "         \"type\": {\n" +
-            "             \"type\" : \"record\",\n" +
-            "             \"name\" : \"headertype\",\n" +
-            "             \"fields\" : [\n" +
-            "                 {\"name\": \"time\", \"type\": \"long\"}\n" +
-            "             ]\n" +
-            "         }\n" +
-            "      }\n" +
-            " ]\n" +
-            "}";
 
     public MessageGenerator(String configs) {
 
-        initConfigs();
+        initDefaultConfig();
         parseArgs(configs);
 
         init();
+        produceRecord();
+	
+	if (initTime > 0) {
+            try {
+                Thread.sleep(initTime);
+            } catch (Exception e) {
+
+            }
+        }
+
+
         try {
             initSender();
         } catch (Exception e) {
@@ -112,23 +96,6 @@ public class MessageGenerator {
         }
 
         produceRecord();
-    }
-
-    private void produceRecord() {
-        try {
-            if (topic.equals("employee")) {
-                produceEmployeeRecord();
-            } else if (topic.equals("gpx_port")) {
-                produceGpxportRecord(configMap.get(FILE));
-                //produceGpxportRecordTest();
-                //testPerformance();
-            } else {
-                System.out.println("no producer for " + topic);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
     }
 
     public static void main(String... args) {
@@ -147,6 +114,27 @@ public class MessageGenerator {
         }
     }
 
+    private void produceRecord() {
+        System.out.println(PREFIX + " produce record for [" + topic + "]");
+        try {
+            if (topic.equals("employee")) {
+                produceEmployeeRecord();
+            } else if (topic.equals("gpx_port")) {
+                produceGpxportRecord(configMap.get(FILE));
+                //produceGpxportRecordTest();
+                //testPerformance();
+            } else if (topic.equals("syslog_info")) {
+                // TODO
+                produceSyslogRecord();
+            } else {
+                System.out.println("no producer for " + topic);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
     private void init() {
         try {
             DipClient.MESSAGE_TYPE messageType = DipClient.MESSAGE_TYPE.AVRO;
@@ -159,20 +147,23 @@ public class MessageGenerator {
             dipClient = new DipClient(configMap.get(BROKER), topic, messageType, getProperteis());
             dipClient.start();
 
-            if (configMap.get(SCHEMA_REGISTRY).equals(AVRO_SCHEMA_REGISTRY)) {
-                schema = dipClient.getSchema(topic);
-            } else if (configMap.get(SCHEMA_REGISTRY).equals(DUMMY_SCHEMA_REGISTRY)) {
-                if (topic.equals("employee")) {
-                    schema = Schema.parse(DummySchemaRegistry.employee_schema);
-                } else if (topic.equals("gpx_port")) {
-                    schema = Schema.parse(gpx_port_schema);
+            if (configMap.get(TYPE).equals("text")) {
+                schema = DipClient.TEXT_FORMAT_SCHEMA;
+            } else {
+                if (configMap.get(SCHEMA_REGISTRY).equals(AVRO_SCHEMA_REGISTRY)) {
+                    schema = dipClient.getSchema(topic);
+                } else if (configMap.get(SCHEMA_REGISTRY).equals(DUMMY_SCHEMA_REGISTRY)) {
+                    if (topic.equals("employee")) {
+                        schema = Schema.parse(DummySchemaRegistry.employee_schema);
+                    } else if (topic.equals("gpx_port")) {
+                        schema = Schema.parse(gpx_port_schema);
+                    }
                 }
             }
 
             System.out.println("schema : " + schema + "\n");
 
             //dipRecordBase = new DipRecordBase<GenericRecord>(schema);
-            blockingQueue = new LinkedBlockingQueue<>(queueSzie);
             executorService = Executors.newFixedThreadPool(20);
 
         } catch (Exception e) {
@@ -186,7 +177,6 @@ public class MessageGenerator {
             String[] keyValue = config.trim().split("=");
             if (keyValue.length == 2) {
                 configMap.put(keyValue[0].toString().trim(), keyValue[1].toString().trim());
-                //System.out.println(keyValue[0] + "=" + keyValue[1]);
             }
         }
 
@@ -225,29 +215,46 @@ public class MessageGenerator {
         } catch (Exception e) {
 
         }
+        try {
+            initTime = Long.parseLong(configMap.get(INIT_TIME));
+        } catch (Exception e) {
+
+        }
+        try {
+            boolean verbose = Boolean.valueOf(configMap.get(VERBOSE));
+            System.out.println("--- config : " + configMap.get(VERBOSE) + " , " + verbose);
+            waitTime = verbose ? 5 : 0;
+            System.out.println("waitTIme : " + waitTime);
+        } catch (Exception e) {
+
+        }
         for (Map.Entry<String, String> entry : configMap.entrySet()) {
             System.out.println(entry.getKey() + "=" + entry.getValue());
         }
 
     }
 
-    private void initConfigs() {
+    private void initDefaultConfig() {
         configMap.put(BROKER, "localhost:9092");
         configMap.put(TOPIC, "employee");
         configMap.put(MAX_COUNT, "1000");
         configMap.put(CONCURRENT, "5");
         configMap.put(QUEUE, "1000000");
-        configMap.put(SCHEMA_REGISTRY, "com.seoeun.schemaregistry.AvroSchemaRegistry");
+        configMap.put(SCHEMA_REGISTRY, "com.nexr.schemaregistry.AvroSchemaRegistry");
+        configMap.put(SCHEMA_REPO, "http://localhost:18181/repo");
         configMap.put(TYPE, "avro");
         configMap.put(BATCH_SIZE, "16384");
         configMap.put(BUFFER_SIZE, "33554432");
+        configMap.put(INIT_TIME, "1000");
+        configMap.put(VERBOSE, "true");
     }
 
     private void initSender() throws Exception {
         for (int i = 0; i < concurrent; i++) {
             executorService.submit(createSender());
-            Thread.sleep(10);
+            Thread.sleep(waitTime);
         }
+        startTime = System.currentTimeMillis();
     }
 
     private void isSendFinish() {
@@ -283,7 +290,7 @@ public class MessageGenerator {
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
-                System.out.println("Sender start 111 ......");
+                System.out.println(PREFIX + "Sender start ......");
                 int retry = 0;
                 try {
                     while (true) {
@@ -327,9 +334,9 @@ public class MessageGenerator {
             properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         }
         properties.put(ProducerConfig.BLOCK_ON_BUFFER_FULL_CONFIG, "false");
-        properties.put(ProducerConfig.ACKS_CONFIG, "all");
-        properties.put(Configurable.SCHEMAREGISTRY_CLASS, configMap.get(SCHEMA_REGISTRY)); //com.seoeun.schemaregistry.AvroSchemaRegistry
-        properties.put(Configurable.SCHEMAREGIDTRY_URL, "http://aih013:18181/repo");
+        properties.put(ProducerConfig.ACKS_CONFIG, "1");
+        properties.put(Configurable.SCHEMAREGISTRY_CLASS, configMap.get(SCHEMA_REGISTRY)); //com.nexr.schemaregistry.AvroSchemaRegistry
+        properties.put(Configurable.SCHEMAREGIDTRY_URL, configMap.get(SCHEMA_REPO));
         properties.put(KafkaAvroMessageEncoder.KAFKA_MESSAGE_CODER_SCHEMA_REGISTRY_CLASS, configMap.get(SCHEMA_REGISTRY));
         if (batchSize != 0) {
             properties.put(ProducerConfig.BATCH_SIZE_CONFIG, String.valueOf(batchSize));
@@ -347,7 +354,6 @@ public class MessageGenerator {
     }
 
     public void produceEmployeeRecord() throws Exception {
-        startTime = System.currentTimeMillis();
         System.out.println(PREFIX + Utils.formatTime(System.currentTimeMillis()) + " : produce record for " +
                 topic);
 
@@ -363,20 +369,82 @@ public class MessageGenerator {
             record.put("name", payload);
             record.put("favorite_number", String.valueOf(i));
             record.put("wrk_dt", time);
-            record.put("srcinfo", "employee");
+            record.put("src_info", "employee");
 
-            boolean offered = blockingQueue.offer(record);
-            while (!offered) {
-                System.out.println("queue is full : " + blockingQueue.size() + ", wait in 100 ms");
-                Thread.sleep(100);
-                offered = blockingQueue.offer(record);
-            }
+                DipRecordBase<GenericRecord> recordBase =
+                        new DipRecordBase<>(topic, record, messageType);
+            send(recordBase);
 
-            i = recordCount.incrementAndGet();
-            if ((i % 10000) == 0) {
-                Thread.sleep(10);
+            if (recordCount.incrementAndGet() == maxCount) {
+                break;
             }
-            if (i == maxCount) {
+        }
+        System.out.println(PREFIX + Utils.formatTime(System.currentTimeMillis()) + " : produce Record end : " +
+                recordCount.get());
+    }
+
+    public void produceNetworkPacketRecord() throws Exception {
+        System.out.println(PREFIX + Utils.formatTime(System.currentTimeMillis()) + " : produce record for " +
+                topic);
+
+        //long time = getTime(2015, 07, 27, 20, 30);
+        long time = System.currentTimeMillis();
+
+        int i = 0;
+        while (true) {
+            GenericRecord record = new GenericData.Record(schema);
+            String srcMac = String.valueOf(i) + "::AB::AB::AA";
+            String srcIp = "192.168.70.1";
+            String destMac = String.valueOf(i) + "::DC:EF:FF";
+            String destIp = "192.168.0.2";
+            record.put("src_mac", srcMac);
+            record.put("src_ip", srcIp);
+            record.put("src_port", "");
+            record.put("dest_mac", destMac);
+            record.put("dest_ip", destIp);
+            record.put("dest_port", "");
+            record.put("host", "www.abc.example.com");
+            record.put("referer", "");
+            record.put("payload_length", srcMac);
+            record.put("wrk_dt", time);
+            record.put("src_info", topic);
+
+            DipRecordBase<GenericRecord> recordBase = new DipRecordBase<>(topic, record, messageType);
+            send(recordBase);
+
+            if (recordCount.incrementAndGet() >= maxCount) {
+                break;
+            }
+        }
+        System.out.println(PREFIX + Utils.formatTime(System.currentTimeMillis()) + " : produce Record end : " +
+                recordCount.get());
+    }
+
+    public void produceSipJson() throws Exception {
+        System.out.println(PREFIX + Utils.formatTime(System.currentTimeMillis()) + " : produce record for " +
+                topic);
+
+        //{"timestamp": "2016-05-08T07:19:03Z", "sip": "144.95.206.85", "url": "www.VGOFV.com", "packet_total": "215"}
+
+        //long time = getTime(2015, 07, 27, 20, 30);
+        long time = System.currentTimeMillis();
+
+        while (true) {
+            String timeLable = Utils.formatTime(time, "yyyy-MM-dd", "UTC");
+            timeLable = timeLable + "T" + Utils.formatTime(time, "hh:mm:ss", "UTC") + "Z";
+            String msg = "";
+            if ((recordCount.get() + 1) % 2 == 0) {
+                msg = "{\"timestamp\": \"" + timeLable + "\", \"sip\": \"a\", \"packet_total\": \"14\"}";
+            } else {
+                msg = "{\"timestamp\": \"" + timeLable + "\", \"sip\": \"b\", \"packet_total\": \"10\"}";
+            }
+            GenericRecord record = new GenericData.Record(schema);
+            record.put(DipRecordBase.MESSAGE_FIELD, msg);
+
+            DipRecordBase<GenericRecord> recordBase = new DipRecordBase<>(topic, record, messageType);
+            send(recordBase);
+
+            if (recordCount.incrementAndGet() >= maxCount) {
                 break;
             }
         }
@@ -426,12 +494,8 @@ public class MessageGenerator {
                 if (b == '\n') {
                     if (!stringBuilder.toString().isEmpty()) {
                         GenericRecord record = createGpxPort(stringBuilder.toString(), time);
-                        boolean offered = blockingQueue.offer(record);
-                        while (!offered) {
-                            //System.out.println("queue is full : " + blockingQueue.size() );
-                            Thread.sleep(1000);
-                            offered = blockingQueue.offer(record);
-                        }
+                        DipRecordBase<GenericRecord> recordBase = new DipRecordBase(topic, record, messageType);
+                        send(recordBase);
                         recordCount.getAndIncrement();
                         stringBuilder.delete(0, stringBuilder.length());
                     }
@@ -490,7 +554,7 @@ public class MessageGenerator {
 //            }
 //        }
 
-        for (int i=0; i<maxCount; i++) {
+        for (int i = 0; i < maxCount; i++) {
             dipClient.send(producerRecord);
             recordCount.incrementAndGet();
         }
@@ -504,7 +568,7 @@ public class MessageGenerator {
     public void testProducerPerformance() throws Exception {
         recordCount.set(0);
         System.err.println("USAGE: java " + ProducerPerformance.class.getName() +
-                    " topic_name num_records record_size target_records_sec [prop_name=prop_value]*");
+                " topic_name num_records record_size target_records_sec [prop_name=prop_value]*");
         System.out.println(PREFIX + Utils.getDateString(System.currentTimeMillis()) + " : start performance test");
 
         /* parse args */

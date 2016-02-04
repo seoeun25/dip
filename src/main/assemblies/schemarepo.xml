@@ -1,0 +1,45 @@
+<assembly>
+    <id>distro</id>
+    <formats>
+        <format>dir</format>
+        <format>tar.gz</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+
+    <!--
+    <files>
+        <file>
+            <source>${project.build.directory}/${artifact.artifactId}-${artifact.version}.jar</source>
+            <outputDirectory>repo-${project.version}/lib</outputDirectory>
+        </file>
+    </files>
+    -->
+    <fileSets>
+        <!-- Distro files, readme, licenses, etc -->
+        <fileSet>
+            <directory>${basedir}/bin</directory>
+            <outputDirectory>dip-schema-registry-${project.version}/bin</outputDirectory>
+            <includes>
+                <include>*</include>
+            </includes>
+            <fileMode>0755</fileMode>
+        </fileSet>
+
+        <fileSet>
+            <directory>${basedir}/conf</directory>
+            <outputDirectory>dip-schema-registry-${project.version}/conf</outputDirectory>
+            <includes>
+                <include>*</include>
+            </includes>
+        </fileSet>
+
+        <fileSet>
+            <directory>${basedir}/../schema-registry/target/</directory>
+            <outputDirectory>dip-schema-registry-${project.version}/lib</outputDirectory>
+            <includes>
+                <include>dip-schema-registry-${project.version}.jar</include>
+            </includes>
+        </fileSet>
+    </fileSets>
+
+</assembly>

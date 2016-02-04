@@ -3,7 +3,7 @@
   "name": "employee",
   "fields": [
       {"name": "name", "type": "string"},
-      {"name": "favorite_number",  "type": ["int", "null"]},
+      {"name": "favorite_number",  "type": ["string", "null"]},
       {"name": "favorite_color", "type": ["string", "null"]},
       {"name": "wrk_dt", "type": "long"},
       {

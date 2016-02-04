@@ -18,6 +18,8 @@ public class DipContext {
     public static final String DIP_HIVESERVER_PASSWD = "dip.hiveserver.passwd";
     public static final String DIP_OOZIE = "dip.oozie";
     public static final String DIP_KAFKA_BROKER = "dip.kafka.broker";
+    public static final String DIP_USER_NAME = "dip.user.name";
+
 
     // etl (camus)
     public static final String DIP_ETL_COUNT_DIR = "dip.etl.count.dir";

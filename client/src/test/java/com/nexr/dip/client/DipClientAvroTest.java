@@ -4,6 +4,7 @@ import com.linkedin.camus.etl.kafka.coders.KafkaAvroMessageEncoder;
 import com.nexr.dip.DipException;
 import com.nexr.dip.conf.Configurable;
 import com.nexr.dip.conf.Context;
+import com.nexr.dip.producer.Producer;
 import com.nexr.dip.record.DipRecordBase;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
@@ -42,12 +43,13 @@ public class DipClientAvroTest {
         Properties properties = getProperteis();
         try {
             dipClient = new DipClient(baseUrl, topic, DipClient.MESSAGE_TYPE.AVRO, properties);
-            DummySchemaRegistry schemaRegistry = new DummySchemaRegistry();
-            schemaRegistry.init(properties);
+            //DummySchemaRegistry schemaRegistry = new DummySchemaRegistry();
+            //schemaRegistry.init(properties);
             Context context = new Context();
             context.putAll(properties);
-            dipClient.start(schemaRegistry);
+            //dipClient.start(schemaRegistry);
             //dipClient.start(Producer.PRODUCER_TYPE.simple.toString(), schemaRegistry);
+            dipClient.start();
         } catch (DipException e) {
             e.printStackTrace();
         }
@@ -61,8 +63,8 @@ public class DipClientAvroTest {
         properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         properties.put(ProducerConfig.BLOCK_ON_BUFFER_FULL_CONFIG, "false");
         properties.put(ProducerConfig.ACKS_CONFIG, "all");
-        properties.put(Configurable.SCHEMAREGISTRY_CLASS, schemaRegistryClass); //com.seoeun.schemaregistry.AvroSchemaRegistry
-        //properties.put(Configurable.SCHEMAREGIDTRY_URL, "http://localhost:18181/avro-repo");
+        //properties.put(Configurable.SCHEMAREGISTRY_CLASS, schemaRegistryClass); //com.nexr.schemaregistry.AvroSchemaRegistry
+        properties.put(Configurable.SCHEMAREGIDTRY_URL, "http://localhost:18181/repo");
         properties.put(KafkaAvroMessageEncoder.KAFKA_MESSAGE_CODER_SCHEMA_REGISTRY_CLASS, schemaRegistryClass);
         return properties;
     }
@@ -82,24 +84,27 @@ public class DipClientAvroTest {
         //long time = System.currentTimeMillis();
 
         String topic = "employee";
-        Schema schema = dipClient.getSchema(DummySchemaRegistry.employee);
+        Schema schema = dipClient.getSchema(topic);
+        System.out.println(schema);
 
-        for (int i = 0; i < 10; i++) {
+        long start = System.currentTimeMillis();
+        for (int i = 0; i < 3000; i++) {
             GenericRecord record = new GenericData.Record(schema);
             record.put("name", i + "::seoeun-33-hello-azrael");
-            record.put("favorite_number", i);
+            record.put("favorite_number", String.valueOf(i));
             record.put("wrk_dt", time);
-            record.put("srcinfo", "employee");
+            record.put("srcinfo", topic);
 
             DipRecordBase<GenericRecord> dipRecordBase = new DipRecordBase(topic, record, DipClient.MESSAGE_TYPE.AVRO);
 
             try {
                 dipClient.send(dipRecordBase);
-                Thread.sleep(100);
+                //Thread.sleep(100);
             } catch (Exception e) {
                 e.printStackTrace(System.out);
             }
         }
+        System.out.println("period : " + String.valueOf(System.currentTimeMillis() - start));
     }
 
     @Test

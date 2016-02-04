@@ -3,6 +3,7 @@ package com.nexr.dip.common;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.TimeZone;
 
 /**
  * Utility
@@ -34,6 +35,15 @@ public class Utils {
         calendar.setTimeInMillis(timestamp);
         return format.format(calendar.getTime());
     }
+
+    public static String formatTime(long timestamp, String pattern, String timezone) {
+        SimpleDateFormat format = new SimpleDateFormat(pattern);
+        format.setTimeZone(TimeZone.getTimeZone(timezone));
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(timestamp);
+        return format.format(calendar.getTime());
+    }
+
 
     public static String getDateString(long time) {
         return formatTime(time, "yyyy-MM-dd HH:mm:ss");

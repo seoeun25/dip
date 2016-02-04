@@ -26,6 +26,7 @@
         <module>example</module>
         <module>server</module>
         <module>tool</module>
+        <module>schema-registry</module>
     </modules>
 
     <dependencyManagement>
