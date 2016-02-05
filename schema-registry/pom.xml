@@ -16,6 +16,13 @@
 
     <dependencies>
 
+        <!-- Dip -->
+        <dependency>
+            <groupId>com.nexr</groupId>
+            <artifactId>dip-common</artifactId>
+            <version>0.9-SNAPSHOT</version>
+        </dependency>
+
         <!-- Avro -->
         <dependency>
             <groupId>org.apache.avro</groupId>
@@ -60,7 +67,8 @@
             <artifactId>guava</artifactId>
         </dependency>
 
-        <!-- jpa -->
+        <!-- jpa : from common -->
+
         <dependency>
             <groupId>org.apache.openjpa</groupId>
             <artifactId>openjpa-jdbc</artifactId>

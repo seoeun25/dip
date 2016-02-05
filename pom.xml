@@ -23,6 +23,7 @@
 
     <modules>
 	<module>client</module>
+        <module>common</module>
         <module>example</module>
         <module>server</module>
         <module>tool</module>

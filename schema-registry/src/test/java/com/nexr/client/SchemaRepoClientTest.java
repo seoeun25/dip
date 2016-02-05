@@ -2,8 +2,6 @@ package com.nexr.client;
 
 import com.nexr.Schemas;
 import com.nexr.schemaregistry.SchemaInfo;
-import com.nexr.server.JDBCService;
-import com.nexr.server.DipSchemaRepoContext;
 import com.nexr.server.DipSchemaRepoServer;
 import junit.framework.Assert;
 import org.junit.AfterClass;
@@ -23,7 +21,7 @@ public class SchemaRepoClientTest {
     @BeforeClass
     public static void setupClass() {
         startServer();
-        client = new DipSchemaRepoClient("http://localhost:18181/repo");
+        client = new DipSchemaRepoClient("http://localhost:18181/schemarepo");
         initData();
     }
 
@@ -37,8 +35,10 @@ public class SchemaRepoClientTest {
             Thread t1 = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    DipSchemaRepoContext.getContext().setConfig(JDBCService.CONF_URL, "jdbc:derby:memory:myDB;create=true");
-                    DipSchemaRepoContext.getContext().setConfig(JDBCService.CONF_DRIVER, "org.apache.derby.jdbc.EmbeddedDriver");
+//                    DipSchemaRepoContext.getContext().setConfig("schemarepo." + JDBCService.CONF_URL, "jdbc:derby:memory:myDB;" +
+//                            "create=true");
+//                    DipSchemaRepoContext.getContext().setConfig("schemarepo." + JDBCService.CONF_DRIVER, "org.apache.derby.jdbc" +
+//                            ".EmbeddedDriver");
                     server = DipSchemaRepoServer.getInstance();
                     try {
                         server.start();
@@ -50,7 +50,7 @@ public class SchemaRepoClientTest {
             });
             t1.start();
 
-            Thread.sleep(7000);
+            Thread.sleep(10000);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -68,7 +68,7 @@ public class SchemaRepoClientTest {
         try {
             ftthifId = client.register(Schemas.ftth_if, Schemas.ftth_if_schema);
             Thread.sleep(1000);
-        }catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -92,7 +92,7 @@ public class SchemaRepoClientTest {
             Assert.assertFalse(id.equals(newId));
 
             client.register(Schemas.ftth_if, "test-schema");
-            client.register(Schemas.ftth_if, Schemas.ftth_if_schema);
+            ftthifId = client.register(Schemas.ftth_if, Schemas.ftth_if_schema);
             Assert.assertNotNull(ftthifId);
 
             Thread.sleep(1000);
@@ -105,7 +105,7 @@ public class SchemaRepoClientTest {
     @Test
     public void testSubjects() {
         List<SchemaInfo> schemaInfoList = client.getSchemaLatestAll();
-        for (SchemaInfo subject: schemaInfoList) {
+        for (SchemaInfo subject : schemaInfoList) {
             System.out.println("--- schema : " + subject);
         }
     }

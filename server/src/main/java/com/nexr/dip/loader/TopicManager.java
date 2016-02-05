@@ -1,10 +1,11 @@
 package com.nexr.dip.loader;
 
+import com.nexr.dip.DipException;
 import com.nexr.dip.DipLoaderException;
 import com.nexr.dip.common.Utils;
 import com.nexr.dip.jpa.LoadResultQueryExecutor;
 import com.nexr.dip.server.DipContext;
-import com.nexr.dip.server.JDBCService;
+import com.nexr.dip.jpa.JDBCService;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +43,7 @@ public class TopicManager {
         interval = DipContext.getContext().getLong("dip.load.schedule." + name + ".interval",
                 defaultScheduleInterval);
 
-        loadResultQueryExecutor = new LoadResultQueryExecutor(JDBCService.getInstance());
+        loadResultQueryExecutor = new LoadResultQueryExecutor(JDBCService.getInstance("dip", "dip-master-mysql"));
 
     }
 
@@ -197,7 +198,7 @@ public class TopicManager {
         try {
             loadResultQueryExecutor.insert(loader.getLoadResult());
             LOG.debug("Insert loadResult in DB : " + loader.getLoadResult().toString());
-        } catch (DipLoaderException e) {
+        } catch (DipException e) {
             LOG.warn("Failed to insert loadResult : " + loader.getLoadResult(), e);
         }
     }
@@ -211,7 +212,7 @@ public class TopicManager {
                 return;
             }
             LOG.debug("Update result in DB " + loader.getLoadResult().toString());
-        } catch (DipLoaderException e) {
+        } catch (DipException e) {
             LOG.warn("Failed to update loadResult : " + loader.getLoadResult(), e);
         }
     }

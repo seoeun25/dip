@@ -1,8 +1,8 @@
 package com.nexr.dip.jpa;
 
 
-import com.nexr.dip.DipLoaderException;
-import com.nexr.dip.server.JDBCService;
+import com.nexr.dip.DipException;
+import com.nexr.dip.jpa.JDBCService;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
@@ -18,18 +18,18 @@ public class DipPropertyQueryExecutor extends QueryExecutor<DipProperty, DipProp
         super(jdbcService);
     }
 
-    public DipProperty get(DipPropertyQuery namedQuery, Object... parameters) throws DipLoaderException {
+    public DipProperty get(DipPropertyQuery namedQuery, Object... parameters) throws DipException {
         EntityManager em = jdbcService.getEntityManager();
         Query query = getSelectQuery(namedQuery, em, parameters);
         Object ret = jdbcService.executeGet(namedQuery.name(), query, em);
         if (ret == null) {
-            throw new DipLoaderException(query.toString());
+            throw new DipException(query.toString());
         }
         DipProperty bean = constructBean(namedQuery, ret, parameters);
         return bean;
     }
 
-    public List<DipProperty> getList(DipPropertyQuery namedQuery, Object... parameters) throws DipLoaderException {
+    public List<DipProperty> getList(DipPropertyQuery namedQuery, Object... parameters) throws DipException {
         EntityManager em = jdbcService.getEntityManager();
         Query query = getSelectQuery(namedQuery, em, parameters);
         List<?> retList = (List<?>) jdbcService.executeGetList(namedQuery.name(), query, em);
@@ -43,12 +43,12 @@ public class DipPropertyQueryExecutor extends QueryExecutor<DipProperty, DipProp
     }
 
     @Override
-    public Query getUpdateQuery(DipPropertyQuery namedQuery, DipProperty bean, EntityManager em) throws DipLoaderException {
+    public Query getUpdateQuery(DipPropertyQuery namedQuery, DipProperty bean, EntityManager em) throws DipException {
         return null;
     }
 
     public Query getSelectQuery(DipPropertyQuery namedQuery, EntityManager em, Object... parameters)
-            throws DipLoaderException {
+            throws DipException {
         Query query = em.createNamedQuery(namedQuery.name());
         switch (namedQuery) {
             case GET_DIPPROPERTY_BY_NAME:
@@ -57,23 +57,23 @@ public class DipPropertyQueryExecutor extends QueryExecutor<DipProperty, DipProp
             case GET_DIPPROPERTY_ALL:
                 break;
             default:
-                throw new DipLoaderException("DipPropertyQueryExecutor cannot set parameters for " + namedQuery.name());
+                throw new DipException("DipPropertyQueryExecutor cannot set parameters for " + namedQuery.name());
         }
         return query;
     }
 
     @Override
-    public Object getSingleValue(DipPropertyQuery namedQuery, Object... parameters) throws DipLoaderException {
+    public Object getSingleValue(DipPropertyQuery namedQuery, Object... parameters) throws DipException {
         return null;
     }
 
     @Override
-    public int executeUpdate(DipPropertyQuery namedQuery, DipProperty jobBean) throws DipLoaderException {
+    public int executeUpdate(DipPropertyQuery namedQuery, DipProperty jobBean) throws DipException {
         return 0;
     }
 
     private DipProperty constructBean(DipPropertyQuery namedQuery, Object ret, Object... parameters)
-            throws DipLoaderException {
+            throws DipException {
         DipProperty bean;
         Object[] arr;
         switch (namedQuery) {
@@ -85,7 +85,7 @@ public class DipPropertyQueryExecutor extends QueryExecutor<DipProperty, DipProp
                 bean.setValue((String) arr[1]);
                 break;
             default:
-                throw new DipLoaderException("DipPropertyQueryExecutor cannot construct job bean for " + namedQuery.name());
+                throw new DipException("DipPropertyQueryExecutor cannot construct job bean for " + namedQuery.name());
         }
         return bean;
     }

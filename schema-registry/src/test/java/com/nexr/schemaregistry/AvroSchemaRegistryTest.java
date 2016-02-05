@@ -3,8 +3,6 @@ package com.nexr.schemaregistry;
 import com.linkedin.camus.schemaregistry.SchemaDetails;
 import com.nexr.Schemas;
 import com.nexr.server.DipSchemaRepoServer;
-import com.nexr.server.JDBCService;
-import com.nexr.server.DipSchemaRepoContext;
 import junit.framework.Assert;
 import org.apache.avro.Schema;
 import org.junit.AfterClass;
@@ -25,7 +23,7 @@ public class AvroSchemaRegistryTest {
 
         schemaRegistry = new AvroSchemaRegistry();
         Properties properties = new Properties();
-        properties.put("etl.schema.registry.url","http://localhost:18181/repo");
+        properties.put("etl.schema.registry.url","http://localhost:18181/schemarepo");
         schemaRegistry.init(properties);
 
         initData();
@@ -46,8 +44,10 @@ public class AvroSchemaRegistryTest {
             Thread t1 = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    DipSchemaRepoContext.getContext().setConfig(JDBCService.CONF_URL, "jdbc:derby:memory:myDB;create=true");
-                    DipSchemaRepoContext.getContext().setConfig(JDBCService.CONF_DRIVER, "org.apache.derby.jdbc.EmbeddedDriver");
+//                    DipSchemaRepoContext.getContext().setConfig("schemarepo." + JDBCService.CONF_URL, "jdbc:derby:memory:myDB;" +
+//                            "create=true");
+//                    DipSchemaRepoContext.getContext().setConfig("schemarepo." + JDBCService.CONF_DRIVER, "org.apache.derby.jdbc" +
+//                            ".EmbeddedDriver");
                     server = DipSchemaRepoServer.getInstance();
                     try {
                         server.start();

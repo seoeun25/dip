@@ -1,7 +1,7 @@
 package com.nexr.dip.jpa;
 
-import com.nexr.dip.DipLoaderException;
-import com.nexr.dip.server.JDBCService;
+import com.nexr.dip.DipException;
+import com.nexr.dip.jpa.JDBCService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +24,7 @@ public abstract class QueryExecutor<T, E extends Enum<E>> {
         this.jdbcService = jdbcService;
     }
 
-    public void insert(T bean) throws DipLoaderException {
+    public void insert(T bean) throws DipException {
         if (bean != null) {
             EntityManager em = jdbcService.getEntityManager();
             try {
@@ -33,7 +33,7 @@ public abstract class QueryExecutor<T, E extends Enum<E>> {
                 em.getTransaction().commit();
             }
             catch (PersistenceException e) {
-                throw new DipLoaderException(e);
+                throw new DipException(e);
             }
             finally {
                 if (em.getTransaction().isActive()) {
@@ -47,17 +47,18 @@ public abstract class QueryExecutor<T, E extends Enum<E>> {
         }
     }
 
-    public abstract T get(E namedQuery, Object... parameters) throws DipLoaderException;
+    public abstract T get(E namedQuery, Object... parameters) throws DipException;
 
-    public abstract List<T> getList(E namedQuery, Object... parameters) throws DipLoaderException;
+    public abstract List<T> getList(E namedQuery, Object... parameters) throws DipException;
 
-    public abstract Query getUpdateQuery(E namedQuery, T bean, EntityManager em) throws DipLoaderException;
+    public abstract Query getUpdateQuery(E namedQuery, T bean, EntityManager em) throws DipException;
 
     public abstract Query getSelectQuery(E namedQuery, EntityManager em, Object... parameters)
-            throws DipLoaderException;
+            throws DipException;
 
     public abstract Object getSingleValue(E namedQuery, Object... parameters)
-            throws DipLoaderException;
+            throws DipException;
 
-    public abstract int executeUpdate(E namedQuery, T jobBean) throws DipLoaderException;
+    public abstract int executeUpdate(E namedQuery, T jobBean) throws DipException;
 }
+

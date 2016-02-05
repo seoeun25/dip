@@ -88,22 +88,5 @@ public class Topic {
         }
     }
 
-//    @GET
-//    @Path("subjects/{subject}/ids/{id}")
-//    @Produces("application/json")
-//    public Response getSchema(@PathParam("subject") String topicName, @PathParam("id") String id) {
-//        try {
-//            long idValue = Long.parseLong(id);
-//            SchemaInfo schemaInfo = queryExecutor.get(QueryExecutor.SchemaInfoQuery.GET_BYTOPICANDID, new Object[]{topicName,
-//                    idValue});
-//            return Response.status(200).entity(schemaInfo.toJsonOblect().toJSONString()).build();
-//        } catch (AvroRepoException e) {
-//            return Response.status(404).entity("Schema Not Found").build();
-//        } catch (Exception e) {
-//            return Response.status(500).entity(e.getMessage()).build();
-//        }
-//    }
-
-
 }
 

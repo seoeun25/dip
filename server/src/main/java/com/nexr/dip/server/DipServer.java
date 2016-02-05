@@ -1,8 +1,11 @@
 package com.nexr.dip.server;
 
+import com.nexr.dip.AppService;
+import com.nexr.dip.DipException;
 import com.nexr.dip.DipLoaderException;
 import com.nexr.dip.jpa.DipProperty;
 import com.nexr.dip.jpa.DipPropertyQueryExecutor;
+import com.nexr.dip.jpa.JDBCService;
 import com.nexr.dip.loader.ScheduledService;
 import com.sun.jersey.spi.container.servlet.ServletContainer;
 import org.mortbay.jetty.Server;
@@ -53,7 +56,7 @@ public class DipServer implements AppService {
             Runtime.getRuntime().addShutdownHook(shutdownInterceptor);
             try {
                 app.start();
-            } catch (DipLoaderException e) {
+            } catch (DipException e) {
                 e.printStackTrace();
             }
         } else if ("stop".equals(cmd)) {
@@ -88,8 +91,8 @@ public class DipServer implements AppService {
         PORT = sPort == null ? DEFAULT_PORT : Integer.parseInt(sPort);
     }
 
-    private void initJDBCService() throws DipLoaderException {
-        jdbcService = JDBCService.getInstance();
+    private void initJDBCService() throws DipException {
+        jdbcService = JDBCService.getInstance("dip", "dip-master-mysql");
         jdbcService.start();
     }
 
@@ -113,13 +116,13 @@ public class DipServer implements AppService {
             for (DipProperty dipProperty : dipPropertyList) {
                 properties.put(dipProperty.getName(), dipProperty.getValue());
             }
-        } catch (DipLoaderException e) {
+        } catch (DipException e) {
             e.printStackTrace();
         }
         return properties;
     }
 
-    public void start() throws DipLoaderException {
+    public void start() throws DipException {
         LOG.info("========= DipServer Starting ......   ========");
 
         init();
@@ -152,7 +155,7 @@ public class DipServer implements AppService {
         root.setAttribute("scheduledService", scheduledService);
     }
 
-    public void shutdown() throws DipLoaderException {
+    public void shutdown() throws DipException {
 
         try {
 
@@ -219,7 +222,7 @@ public class DipServer implements AppService {
             System.out.println("Call the shutdown routine");
             try {
                 app.shutdown();
-            } catch (DipLoaderException e) {
+            } catch (DipException e) {
                 e.printStackTrace();
             }
         }

@@ -16,6 +16,13 @@
 
     <dependencies>
 
+        <!-- Dip -->
+        <dependency>
+            <groupId>com.nexr</groupId>
+            <artifactId>dip-common</artifactId>
+            <version>0.9-SNAPSHOT</version>
+        </dependency>
+
         <!-- SchemaRegistry -->
         <dependency>
             <groupId>com.nexr</groupId>

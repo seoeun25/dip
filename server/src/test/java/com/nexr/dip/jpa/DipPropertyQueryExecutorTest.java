@@ -1,10 +1,10 @@
 package com.nexr.dip.jpa;
 
-import com.nexr.dip.DipLoaderException;
+import com.nexr.dip.DipException;
 import com.nexr.dip.common.Utils;
 import com.nexr.dip.loader.LoadResult;
 import com.nexr.dip.loader.ScheduledService;
-import com.nexr.dip.server.JDBCService;
+import com.nexr.dip.jpa.JDBCService;
 import org.apache.oozie.client.WorkflowJob;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -21,7 +21,7 @@ public class DipPropertyQueryExecutorTest {
     @BeforeClass
     public static void setupClass() {
         try {
-            jdbcService = JDBCService.getInstance();
+            jdbcService = JDBCService.getInstance("dip", "dip-master-mysql");
             jdbcService.start();
 
             dipPropertyQueryExecutor = new DipPropertyQueryExecutor(jdbcService);
@@ -62,7 +62,7 @@ public class DipPropertyQueryExecutorTest {
             for (DipProperty dipProperty : list) {
                 System.out.println(dipProperty.getName() + "=" + dipProperty.getValue());
             }
-        } catch (DipLoaderException e) {
+        } catch (DipException e) {
             e.printStackTrace();
         }
     }
@@ -73,7 +73,7 @@ public class DipPropertyQueryExecutorTest {
             DipProperty dipProperty = dipPropertyQueryExecutor.get(DipPropertyQueryExecutor.DipPropertyQuery
                     .GET_DIPPROPERTY_BY_NAME, new Object[]{"dip.load.task.count"});
             System.out.println(dipProperty.getName() + "=" + dipProperty.getValue());
-        } catch (DipLoaderException e) {
+        } catch (DipException e) {
             e.printStackTrace();
         }
     }
@@ -172,7 +172,7 @@ public class DipPropertyQueryExecutorTest {
             loadResult = loadResultQueryExecutor.get(LoadResultQueryExecutor.LoadResultQuery.GET_LOADRESULT,
                     new Object[]{name, executionTime});
             System.out.println(loadResult);
-        } catch (DipLoaderException e) {
+        } catch (DipException e) {
             e.printStackTrace();
         }
     }
@@ -193,7 +193,7 @@ public class DipPropertyQueryExecutorTest {
             for (LoadResult loadResult : list) {
                 System.out.println(loadResult.toString());
             }
-        } catch (DipLoaderException e) {
+        } catch (DipException e) {
             e.printStackTrace();
         }
     }
@@ -209,7 +209,7 @@ public class DipPropertyQueryExecutorTest {
                 System.out.println(loadResult.toString());
             }
 
-        } catch (DipLoaderException e) {
+        } catch (DipException e) {
             e.printStackTrace();
         }
     }

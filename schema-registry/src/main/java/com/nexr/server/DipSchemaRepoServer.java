@@ -1,6 +1,8 @@
 package com.nexr.server;
 
-import com.nexr.AvroRepoException;
+import com.nexr.dip.AppService;
+import com.nexr.dip.DipException;
+import com.nexr.dip.jpa.JDBCService;
 import com.sun.jersey.spi.container.servlet.ServletContainer;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.handler.ContextHandlerCollection;
@@ -8,6 +10,7 @@ import org.mortbay.jetty.servlet.Context;
 import org.mortbay.jetty.servlet.ServletHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 
 public class DipSchemaRepoServer implements AppService {
 
@@ -41,7 +44,7 @@ public class DipSchemaRepoServer implements AppService {
             Runtime.getRuntime().addShutdownHook(shutdownInterceptor);
             try {
                 app.start();
-            } catch (AvroRepoException e) {
+            } catch (DipException e) {
                 e.printStackTrace();
             }
         } else if ("stop".equals(cmd)) {
@@ -53,7 +56,7 @@ public class DipSchemaRepoServer implements AppService {
         try {
             initContext();
             initServices();
-        } catch (AvroRepoException e) {
+        } catch (DipException e) {
             LOG.error("Fail to init services ", e);
         }
     }
@@ -63,12 +66,12 @@ public class DipSchemaRepoServer implements AppService {
         PORT = sPort == null ? DEFAULT_PORT : Integer.parseInt(sPort);
     }
 
-    private void initServices() throws AvroRepoException {
-        jdbcService = new JDBCService();
+    private void initServices() throws DipException {
+        jdbcService = JDBCService.getInstance("schemarepo", "repo-master-mysql");
         jdbcService.start();
     }
 
-    public void start() throws AvroRepoException {
+    public void start() throws DipException {
         LOG.info("========= Avro Repo Starting ......   ========");
 
         init();
@@ -100,7 +103,7 @@ public class DipSchemaRepoServer implements AppService {
         root.addServlet(jerseyServlet, "/*");
     }
 
-    public void shutdown() throws AvroRepoException {
+    public void shutdown() throws DipException {
 
         try {
             jettyServer.stop();
@@ -128,7 +131,7 @@ public class DipSchemaRepoServer implements AppService {
             System.out.println("Call the shutdown routine");
             try {
                 app.shutdown();
-            } catch (AvroRepoException e) {
+            } catch (DipException e) {
                 e.printStackTrace();
             }
         }

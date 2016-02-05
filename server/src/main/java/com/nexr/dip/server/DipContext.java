@@ -1,6 +1,7 @@
 package com.nexr.dip.server;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.nexr.dip.Context;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,49 +33,28 @@ public class DipContext {
     public static final String DIP_PARTITION_CREATE_DDL = "dip.hive.partition.createddl";
     public static final String DIP_SCHEDULE_RETRY_MAX = "dip.schedule.retry.max";
 
-    private static final String SITE_XML = "dip.conf";
     private static Logger LOG = LoggerFactory.getLogger(DipContext.class);
-    private static DipContext context;
-    private Properties properties;
+    private static DipContext dipContext;
+
+    private Context context;
+
+    private final String SITE_CONFIG = "dip.conf";
+    private final String DEFAULT_CONFIG = "dip-default.conf";
 
     private DipContext() {
-        initConfig();
+        context = new Context();
+        context.initConfig(SITE_CONFIG, DEFAULT_CONFIG);
     }
 
     public static DipContext getContext() {
-        if (context == null) {
-            context = new DipContext();
+        if (dipContext == null) {
+            dipContext = new DipContext();
         }
-        return context;
-    }
-
-    private void initConfig() {
-
-        properties = new Properties();
-        try {
-            properties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("dip-default.conf"));
-        } catch (Exception e) {
-            LOG.info("Fail to load dip-default.conf");
-        }
-
-        try {
-            Properties siteProperties = new Properties(properties);
-            siteProperties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream(SITE_XML));
-            for (String key : siteProperties.stringPropertyNames()) {
-                properties.put(key, siteProperties.getProperty(key));
-            }
-        } catch (Exception e) {
-            LOG.info("Can not find config file {0}, Using default-config", SITE_XML);
-        }
-
-        for (String key : properties.stringPropertyNames()) {
-            LOG.debug("[dip.conf] " + key + " = " + properties.getProperty(key));
-        }
-
+        return dipContext;
     }
 
     public String getConfig(String name) {
-        return properties.getProperty(name);
+        return context.getConfig(name);
     }
 
     public long getLong(String name, long defaultValue) {
@@ -95,11 +75,11 @@ public class DipContext {
 
     @VisibleForTesting
     public void setConfig(String name, String value) {
-        properties.put(name, value);
+        context.setConfig(name, value);
     }
 
     public Properties getProperties() {
-        return properties;
+        return context.getProperties();
     }
 
 

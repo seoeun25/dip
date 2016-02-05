@@ -1,7 +1,8 @@
-package com.nexr.dip.server;
+package com.nexr.dip.jpa;
 
-import com.nexr.dip.DipLoaderException;
-import com.nexr.dip.jpa.DipProperty;
+import com.nexr.dip.AppService;
+import com.nexr.dip.Context;
+import com.nexr.dip.DipException;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.apache.openjpa.lib.jdbc.DecoratingDataSource;
 import org.apache.openjpa.persistence.OpenJPAEntityManagerFactorySPI;
@@ -20,34 +21,35 @@ import java.util.Properties;
 
 public class JDBCService implements AppService {
 
-    public static final String CONF_PREFIX = "dip.";
-    public static final String CONF_URL = CONF_PREFIX + "jdbc.url";
-    public static final String CONF_DRIVER = CONF_PREFIX + "jdbc.driver";
-    public static final String CONF_USERNAME = CONF_PREFIX + "jdbc.username";
-    public static final String CONF_PASSWORD = CONF_PREFIX + "jdbc.password";
-    public static final String CONF_DB_SCHEMA = CONF_PREFIX + "schema.name";
-    public static final String CONF_CONN_DATA_SOURCE = CONF_PREFIX + "connection.data.source";
-    public static final String CONF_CONN_PROPERTIES = CONF_PREFIX + "connection.properties";
-    public static final String CONF_MAX_ACTIVE_CONN = CONF_PREFIX + "pool.max.active.conn";
-    public static final String CONF_CREATE_DB_SCHEMA = CONF_PREFIX + "create.db.schema";
-    public static final String CONF_VALIDATE_DB_CONN = CONF_PREFIX + "validate.db.connection";
-    public static final String CONF_VALIDATE_DB_CONN_EVICTION_INTERVAL = CONF_PREFIX + "validate.db.connection.eviction.interval";
-    public static final String CONF_VALIDATE_DB_CONN_EVICTION_NUM = CONF_PREFIX + "validate.db.connection.eviction.num";
-    public static final String CONF_VALIDATE_DB_CONN_QUERY = CONF_PREFIX + "validate.db.connection.query";
+    public static final String CONF_URL = "jdbc.url";
+    public static final String CONF_DRIVER = "jdbc.driver";
+    public static final String CONF_USERNAME = "jdbc.username";
+    public static final String CONF_PASSWORD = "jdbc.password";
+    public static final String CONF_DB_SCHEMA = "schema.name";
+    public static final String CONF_CONN_DATA_SOURCE = "connection.data.source";
+    public static final String CONF_CONN_PROPERTIES = "connection.properties";
+    public static final String CONF_MAX_ACTIVE_CONN = "pool.max.active.conn";
+    public static final String CONF_CREATE_DB_SCHEMA = "create.db.schema";
+    public static final String CONF_VALIDATE_DB_CONN = "validate.db.connection";
+    public static final String CONF_VALIDATE_DB_CONN_EVICTION_INTERVAL = "validate.db.connection.eviction.interval";
+    public static final String CONF_VALIDATE_DB_CONN_EVICTION_NUM = "validate.db.connection.eviction.num";
+    public static final String CONF_VALIDATE_DB_CONN_QUERY = "validate.db.connection.query";
 
-    public static String persistentUnit = "master-mysql";
     private static Logger LOG = LoggerFactory.getLogger(JDBCService.class);
+    private static JDBCService instance;
     private EntityManagerFactory factory;
 
-    private static JDBCService instance;
+    private String name;
+    private String persistentUnit;
 
-    private JDBCService() {
-
+    private JDBCService(String name, String persistentUnit) {
+        this.name = name;
+        this.persistentUnit = persistentUnit;
     }
 
-    public static JDBCService getInstance() {
+    public static JDBCService getInstance(String name, String persistentUnit) {
         if (instance == null) {
-            instance = new JDBCService();
+            instance = new JDBCService(name, persistentUnit);
         }
         return instance;
     }
@@ -65,27 +67,29 @@ public class JDBCService implements AppService {
         return basicDataSource;
     }
 
-    public void start() throws DipLoaderException {
-        String dbSchema = DipContext.getContext().getConfig(CONF_DB_SCHEMA);
-        String url = DipContext.getContext().getConfig(CONF_URL);
-        String driver = DipContext.getContext().getConfig(CONF_DRIVER);
-        String user = DipContext.getContext().getConfig(CONF_USERNAME);
-        String password = DipContext.getContext().getConfig(CONF_PASSWORD).trim();
-        String maxConn = DipContext.getContext().getConfig(CONF_MAX_ACTIVE_CONN).trim();
-        String dataSource = DipContext.getContext().getConfig(CONF_CONN_DATA_SOURCE);
-        String connPropsConfig = DipContext.getContext().getConfig(CONF_CONN_PROPERTIES);
-        boolean autoSchemaCreation = Boolean.parseBoolean(DipContext.getContext().getConfig(CONF_CREATE_DB_SCHEMA));
-        boolean validateDbConn = Boolean.parseBoolean(DipContext.getContext().getConfig(CONF_VALIDATE_DB_CONN));
-        String evictionInterval = DipContext.getContext().getConfig(CONF_VALIDATE_DB_CONN_EVICTION_INTERVAL).trim();
-        String evictionNum = DipContext.getContext().getConfig(CONF_VALIDATE_DB_CONN_EVICTION_NUM).trim();
-        String validationQuery = DipContext.getContext().getConfig(CONF_VALIDATE_DB_CONN_QUERY);
+    public void start() throws DipException {
+        Context context = new Context();
+        context.initConfig(name + ".conf", name + "-default.conf");
+        String dbSchema = context.getConfig(name + "." + CONF_DB_SCHEMA);
+        String url = context.getConfig(name + "." + CONF_URL);
+        String driver = context.getConfig(name + "." + CONF_DRIVER);
+        String user = context.getConfig(name + "." + CONF_USERNAME);
+        String password = context.getConfig(name + "." + CONF_PASSWORD).trim();
+        String maxConn = context.getConfig(name + "." + CONF_MAX_ACTIVE_CONN).trim();
+        String dataSource = context.getConfig(name + "." + CONF_CONN_DATA_SOURCE);
+        String connPropsConfig = context.getConfig(name + "." + CONF_CONN_PROPERTIES);
+        boolean autoSchemaCreation = Boolean.parseBoolean(context.getConfig(name + "." + CONF_CREATE_DB_SCHEMA));
+        boolean validateDbConn = Boolean.parseBoolean(context.getConfig(name + "." + CONF_VALIDATE_DB_CONN));
+        String evictionInterval = context.getConfig(name + "." + CONF_VALIDATE_DB_CONN_EVICTION_INTERVAL).trim();
+        String evictionNum = context.getConfig(name + "." + CONF_VALIDATE_DB_CONN_EVICTION_NUM).trim();
+        String validationQuery = context.getConfig(name + "." + CONF_VALIDATE_DB_CONN_QUERY);
 
         if (!url.startsWith("jdbc:")) {
-            throw new DipLoaderException("invalid JDBC URL, must start with 'jdbc:'");
+            throw new DipException("invalid JDBC URL, must start with 'jdbc:'");
         }
         String dbType = url.substring("jdbc:".length());
         if (dbType.indexOf(":") <= 0) {
-            throw new DipLoaderException("invalid JDBC URL, missing vendor 'jdbc:[VENDOR]:...'");
+            throw new DipException("invalid JDBC URL, missing vendor 'jdbc:[VENDOR]:...'");
         }
 
         String connProps = "DriverClassName={0},Url={1},Username={2},Password={3},MaxActive={4}";
@@ -113,10 +117,12 @@ public class JDBCService implements AppService {
 
         props.setProperty("openjpa.ConnectionDriverName", dataSource);
 
+        //dip-master-mysql
         factory = Persistence.createEntityManagerFactory(persistentUnit, props);
 
         EntityManager entityManager = getEntityManager();
-        entityManager.find(DipProperty.class, 1);
+        // TODO No need to find. Persistence.xml
+        //entityManager.find(DipProperty.class, 1);
 
         LOG.info("All entities initialized");
         entityManager.getTransaction().begin();
@@ -163,7 +169,7 @@ public class JDBCService implements AppService {
         }
     }
 
-    public int executeUpdate(String namedQueryName, Query query, EntityManager em) throws DipLoaderException {
+    public int executeUpdate(String namedQueryName, Query query, EntityManager em) throws DipException {
         try {
 
             LOG.trace("Executing Update/Delete Query [{0}]", namedQueryName);
@@ -173,11 +179,9 @@ public class JDBCService implements AppService {
                 em.getTransaction().commit();
             }
             return ret;
-        }
-        catch (PersistenceException e) {
-            throw new DipLoaderException("Failed to update", e);
-        }
-        finally {
+        } catch (PersistenceException e) {
+            throw new DipException("Failed to update", e);
+        } finally {
             processFinally(em, namedQueryName, true);
         }
     }

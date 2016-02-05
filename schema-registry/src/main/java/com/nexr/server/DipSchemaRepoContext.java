@@ -1,6 +1,7 @@
 package com.nexr.server;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.nexr.dip.Context;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -8,49 +9,34 @@ import java.util.Properties;
 
 public class DipSchemaRepoContext {
 
-    private static final String SITE_XML = "schema-repo.conf";
     private static Logger LOG = LoggerFactory.getLogger(DipSchemaRepoContext.class);
-    private static DipSchemaRepoContext context;
-    private Properties properties;
+    private static DipSchemaRepoContext schemaRepoContext;
+
+    private Context context;
+
+    private final String SITE_CONFIG = "schemarepo.conf";
+    private final String DEFAULT_CONFIG = "schemarepo-default.conf";
+
 
     private DipSchemaRepoContext() {
-        initConfig();
+        context = new Context();
+        context.initConfig(SITE_CONFIG, DEFAULT_CONFIG);
     }
 
     public static DipSchemaRepoContext getContext() {
-        if (context == null) {
-            context = new DipSchemaRepoContext();
+        if (schemaRepoContext == null) {
+            schemaRepoContext = new DipSchemaRepoContext();
         }
-        return context;
-    }
-
-    private void initConfig() {
-
-        properties = new Properties();
-        try {
-            properties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream("schema-repo-default.conf"));
-        } catch (Exception e) {
-            LOG.info("Fail to load schema-repo-default.conf");
-        }
-
-        try {
-            properties.load(Thread.currentThread().getContextClassLoader().getResourceAsStream(SITE_XML));
-            for (String key: properties.stringPropertyNames()) {
-                LOG.info(key + " = " + properties.get(key));
-            }
-        } catch (Exception e) {
-            LOG.info("Can not find config file {0}, Using default-config", SITE_XML);
-        }
-
+        return schemaRepoContext;
     }
 
     public String getConfig(String name) {
-        return properties.getProperty(name);
+        return context.getConfig(name);
     }
 
     @VisibleForTesting
     public void setConfig(String name, String value) {
-        properties.put(name, value);
+        context.setConfig(name, value);
     }
 
 

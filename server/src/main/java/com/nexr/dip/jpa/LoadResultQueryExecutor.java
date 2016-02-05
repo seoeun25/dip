@@ -1,9 +1,9 @@
 package com.nexr.dip.jpa;
 
 
-import com.nexr.dip.DipLoaderException;
+import com.nexr.dip.DipException;
 import com.nexr.dip.loader.LoadResult;
-import com.nexr.dip.server.JDBCService;
+import com.nexr.dip.jpa.JDBCService;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
@@ -21,19 +21,19 @@ public class LoadResultQueryExecutor extends QueryExecutor<LoadResult, LoadResul
     }
 
     @Override
-    public LoadResult get(LoadResultQuery namedQuery, Object... parameters) throws DipLoaderException {
+    public LoadResult get(LoadResultQuery namedQuery, Object... parameters) throws DipException {
         EntityManager em = jdbcService.getEntityManager();
         Query query = getSelectQuery(namedQuery, em, parameters);
         Object ret = jdbcService.executeGet(namedQuery.name(), query, em);
         if (ret == null) {
-            throw new DipLoaderException(query.toString());
+            throw new DipException(query.toString());
         }
         LoadResult bean = constructBean(namedQuery, ret, parameters);
         return bean;
     }
 
     @Override
-    public List<LoadResult> getList(LoadResultQuery namedQuery, Object... parameters) throws DipLoaderException {
+    public List<LoadResult> getList(LoadResultQuery namedQuery, Object... parameters) throws DipException {
         EntityManager em = jdbcService.getEntityManager();
         Query query = getSelectQuery(namedQuery, em, parameters);
         List<?> retList = (List<?>) jdbcService.executeGetList(namedQuery.name(), query, em);
@@ -47,7 +47,7 @@ public class LoadResultQueryExecutor extends QueryExecutor<LoadResult, LoadResul
     }
 
     @Override
-    public Query getUpdateQuery(LoadResultQuery namedQuery, LoadResult bean, EntityManager em) throws DipLoaderException {
+    public Query getUpdateQuery(LoadResultQuery namedQuery, LoadResult bean, EntityManager em) throws DipException {
         Query query = em.createNamedQuery(namedQuery.name());
         switch (namedQuery) {
             case UPDATE_LOADRESULT:
@@ -66,14 +66,14 @@ public class LoadResultQueryExecutor extends QueryExecutor<LoadResult, LoadResul
                 query.setParameter("endTime", bean.getEndTime());
                 break;
             default:
-                throw new DipLoaderException("QueryExecutor cannot set parameters for " + namedQuery.name());
+                throw new DipException("QueryExecutor cannot set parameters for " + namedQuery.name());
         }
         return query;
 
     }
 
     @Override
-    public Query getSelectQuery(LoadResultQuery namedQuery, EntityManager em, Object... parameters) throws DipLoaderException {
+    public Query getSelectQuery(LoadResultQuery namedQuery, EntityManager em, Object... parameters) throws DipException {
         Query query = em.createNamedQuery(namedQuery.name());
         switch (namedQuery) {
             case GET_LOADRESULT:
@@ -89,18 +89,18 @@ public class LoadResultQueryExecutor extends QueryExecutor<LoadResult, LoadResul
                 query.setMaxResults((Integer) parameters[1]);
                 break;
             default:
-                throw new DipLoaderException("LoadResultQueryExecutor cannot set parameters for " + namedQuery.name());
+                throw new DipException("LoadResultQueryExecutor cannot set parameters for " + namedQuery.name());
         }
         return query;
     }
 
     @Override
-    public Object getSingleValue(LoadResultQuery namedQuery, Object... parameters) throws DipLoaderException {
+    public Object getSingleValue(LoadResultQuery namedQuery, Object... parameters) throws DipException {
         return null;
     }
 
     @Override
-    public int executeUpdate(LoadResultQuery namedQuery, LoadResult jobBean) throws DipLoaderException {
+    public int executeUpdate(LoadResultQuery namedQuery, LoadResult jobBean) throws DipException {
         EntityManager em = jdbcService.getEntityManager();
         Query query = getUpdateQuery(namedQuery, jobBean, em);
 
@@ -109,7 +109,7 @@ public class LoadResultQueryExecutor extends QueryExecutor<LoadResult, LoadResul
     }
 
     private LoadResult constructBean(LoadResultQuery namedQuery, Object ret, Object... parameters)
-            throws DipLoaderException {
+            throws DipException {
         LoadResult bean;
         Object[] arr;
         switch (namedQuery) {
@@ -133,7 +133,7 @@ public class LoadResultQueryExecutor extends QueryExecutor<LoadResult, LoadResul
                 bean.setEndTime((Timestamp) arr[12]);
                 break;
             default:
-                throw new DipLoaderException("LoadResultQueryExecutor cannot construct job bean for " + namedQuery.name());
+                throw new DipException("LoadResultQueryExecutor cannot construct job bean for " + namedQuery.name());
         }
         return bean;
     }
