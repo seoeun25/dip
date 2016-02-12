@@ -29,6 +29,8 @@ if [ "$CONF_DIR" == "" ]; then
     CONF_DIR=$DIP_HOME/conf
 fi
 
+# load hadoop dependencies from external location
+#CLASS_PATH="/usr/lib/hadoop/share/hadoop/hdfs/hadoop-hdfs-2.7.1.jar:/usr/lib/hadoop/share/hadoop/common/hadoop-common-2.7.1.jar:/usr/lib/hadoop//share/hadoop/tools/lib/hadoop-auth-2.7.1.jar"
 CLASS_PATH=""
 DIP_CONF=$CONF_DIR
 # prepend conf dir to classpath

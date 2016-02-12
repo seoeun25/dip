@@ -41,7 +41,8 @@
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-common</artifactId>
-            <scope>compile</scope>
+            <version>${hadoop.version}</version>
+            <scope>provided</scope>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.hadoop</groupId>

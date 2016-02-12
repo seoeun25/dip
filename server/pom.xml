@@ -53,12 +53,14 @@
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-hdfs</artifactId>
             <version>${hadoop.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-common</artifactId>
-            <scope>compile</scope>
+            <version>${hadoop.version}</version>
+            <scope>provided</scope>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.hadoop</groupId>
@@ -129,6 +131,10 @@
                     <artifactId>protobuf-java</artifactId>
                 </exclusion>
                 <exclusion>
+                    <groupId>org.apache.hadoop</groupId>
+                    <artifactId>hadoop-auth</artifactId>
+                </exclusion>
+                <exclusion>
                     <groupId>com.jcraft</groupId>
                     <artifactId>jsch</artifactId>
                 </exclusion>
@@ -193,6 +199,10 @@
                 <exclusion>
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-simple</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.hadoop</groupId>
+                    <artifactId>hadoop-auth</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
