@@ -28,6 +28,7 @@
         <module>server</module>
         <module>tool</module>
         <module>schema-registry</module>
+        <module>camus</module>
     </modules>
 
     <dependencyManagement>
@@ -64,6 +65,72 @@
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-common</artifactId>
                 <version>${hadoop.version}</version>
+            </dependency>
+
+            <!-- Camus -->
+            <!-- conflict asm-3.1 and asm-4.1, jersey-1.9 need asm-3.1 -->
+            <dependency>
+                <groupId>com.linkedin.camus</groupId>
+                <artifactId>camus-api</artifactId>
+                <version>${camus.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
+                        <artifactId>hadoop-mapreduce-client-core</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
+                        <artifactId>hadoop-mapreduce-client-common</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
+                        <artifactId>hadoop-common</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.easymock</groupId>
+                        <artifactId>easymock</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>com.linkedin.camus</groupId>
+                <artifactId>camus-kafka-coders</artifactId>
+                <version>${camus.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.linkedin.camus</groupId>
+                        <artifactId>camus-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.linkedin.camus</groupId>
+                        <artifactId>camus-schema-registry</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.kafka</groupId>
+                        <artifactId>kafka_2.10</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.google.code.gson</groupId>
+                        <artifactId>gson</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>joda-time</groupId>
+                        <artifactId>joda-time</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>com.linkedin.camus</groupId>
+                <artifactId>camus-etl-kafka</artifactId>
+                <version>${camus.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.linkedin.camus</groupId>
+                        <artifactId>camus-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>

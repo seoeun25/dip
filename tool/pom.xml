@@ -36,40 +36,6 @@
             <version>0.9-SNAPSHOT</version>
         </dependency>
 
-        <!-- Camus -->
-        <dependency>
-            <groupId>com.linkedin.camus</groupId>
-            <artifactId>camus-etl-kafka</artifactId>
-            <version>${camus.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.linkedin.camus</groupId>
-            <artifactId>camus-kafka-coders</artifactId>
-            <version>${camus.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.linkedin.camus</groupId>
-                    <artifactId>camus-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.linkedin.camus</groupId>
-                    <artifactId>camus-schema-registry</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.kafka</groupId>
-                    <artifactId>kafka_2.10</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.google.code.gson</groupId>
-                    <artifactId>gson</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>joda-time</groupId>
-                    <artifactId>joda-time</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-common</artifactId>
@@ -214,20 +180,6 @@
             </exclusions>
         </dependency>
 
-        <!-- kafka -->
-        <dependency>
-            <groupId>org.apache.kafka</groupId>
-            <artifactId>kafka_2.10</artifactId>
-            <version>${kafka.version}</version>
-        </dependency>
-
-        <!-- oozie -->
-        <dependency>
-            <groupId>org.apache.oozie</groupId>
-            <artifactId>oozie-client</artifactId>
-            <version>${oozie.version}</version>
-        </dependency>
-
         <!-- logging -->
         <dependency>
             <groupId>log4j</groupId>
@@ -258,8 +210,6 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.10</version>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 

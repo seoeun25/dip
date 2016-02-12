@@ -35,57 +35,18 @@
         <dependency>
             <groupId>com.linkedin.camus</groupId>
             <artifactId>camus-etl-kafka</artifactId>
-            <version>${camus.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.linkedin.camus</groupId>
-                    <artifactId>camus-api</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <!-- conflict asm-3.1 and asm-4.1, jersey-1.9 need asm-3.1 -->
+        <!--
         <dependency>
             <groupId>com.linkedin.camus</groupId>
             <artifactId>camus-api</artifactId>
-            <version>${camus.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.easymock</groupId>
-                    <artifactId>easymock</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.hadoop</groupId>
-                    <artifactId>hadoop-mapreduce-client-core</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
+        -->
 
         <dependency>
             <groupId>com.linkedin.camus</groupId>
             <artifactId>camus-kafka-coders</artifactId>
-            <version>${camus.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.linkedin.camus</groupId>
-                    <artifactId>camus-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.linkedin.camus</groupId>
-                    <artifactId>camus-schema-registry</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.kafka</groupId>
-                    <artifactId>kafka_2.10</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.google.code.gson</groupId>
-                    <artifactId>gson</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>joda-time</groupId>
-                    <artifactId>joda-time</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
@@ -286,8 +247,6 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.10</version>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 

@@ -107,7 +107,7 @@ public class ScheduledService {
             appPathTemplate = appPathTemplate.replace("${nameNode}", jobProperties.getProperty("nameNode"));
         }
         if ( appPathTemplate.contains("${user.name}"))  {
-            appPathTemplate = appPathTemplate.replace("${user.name}", jobProperties.getProperty("user.name")) ;
+            appPathTemplate = appPathTemplate.replace("${user.name}", DipContext.getContext().getConfig(DipContext.DIP_USER_NAME)) ;
         }
         if (appPathTemplate.contains("${root}")) {
             appPathTemplate = appPathTemplate.replace("${root}", jobProperties.getProperty("root"));
