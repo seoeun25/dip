@@ -295,48 +295,25 @@ public class MessageGenerator {
                             try {
                                 dipClient.send(recordBase);
 
-                                int count = sendCount.incrementAndGet();
-                                if (count % 100000 == 0) {
-                                    System.out.println(Utils.getDateString(System.currentTimeMillis()) + ", send [" +
-                                            Thread.currentThread().getName() + "] " + count + " / queue : " + blockingQueue.size());
-                                    Thread.sleep(10);
-                                    System.out.println("memory : total : " + Runtime.getRuntime().totalMemory() + ", max : " + Runtime
-                                            .getRuntime().maxMemory() + " , free " + Runtime.getRuntime().freeMemory());
-                                }
-                            } catch (DipException e) {
-                                System.out.println("Failed to send : " + e.getMessage() + ", skip this line : " + record.toString());
-                                failCount.incrementAndGet();
-                                e.printStackTrace();
-                                Thread.sleep(10);
-                            } catch (NullPointerException e) {
-                                System.out.println("Failed to send : " + e.getMessage() + ", skip this line : " + record.toString());
-                                failCount.incrementAndGet();
-                                e.printStackTrace();
-                                Thread.sleep(10);
-                            }
-                        } else {
-                            if (recordCount.get() == 0) {
-                                Thread.sleep(10);
-                            } else {
-//                                System.out.println("send : " + sendCount.get() + " / record : " + recordCount.get() + " , queue :" +
-//                                        blockingQueue.size() );
-                                Thread.sleep(10);
-                                retry++;
-                            }
-                        }
-                        if (retry >= 100) {
-                            //System.out.println("wait retry : " + retry);
-                            break;
-                        }
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                System.out.println("Sender end ......");
-                isSendFinish();
+            int count = sendCount.incrementAndGet();
+            if (count % 100000 == 0 && waitTime > 0) {
+                System.out.println(Utils.getDateString(System.currentTimeMillis()) + ", send [" +
+                        Thread.currentThread().getName() + "] " + count );
+                System.out.println("memory : total : " + Runtime.getRuntime().totalMemory() + ", max : " + Runtime
+                        .getRuntime().maxMemory() + " , free " + Runtime.getRuntime().freeMemory());
+                Thread.sleep(waitTime);
             }
-        };
-        return runnable;
+        } catch (DipException e) {
+            System.out.println("Failed to send : " + e.getMessage() + ", skip this line : " + recordBase.getData().toString());
+            failCount.incrementAndGet();
+            e.printStackTrace();
+            Thread.sleep(10);
+        } catch (NullPointerException e) {
+            System.out.println("Failed to send : " + e.getMessage() + ", skip this line : " + recordBase.getData().toString());
+            failCount.incrementAndGet();
+            e.printStackTrace();
+            Thread.sleep(10);
+        }
     }
 
     private Properties getProperteis() {
@@ -384,7 +361,7 @@ public class MessageGenerator {
                     "---azrael-seoeun---azrael-seoeun---azrael-seoeun---azrael-seoeun---azrael-seoeun" +
                     "---azrael-seoeun---azrael-seoeun---azrael-END";
             record.put("name", payload);
-            record.put("favorite_number", i);
+            record.put("favorite_number", String.valueOf(i));
             record.put("wrk_dt", time);
             record.put("srcinfo", "employee");
 
