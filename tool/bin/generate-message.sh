@@ -3,7 +3,7 @@
 
 if [ $# -le 0 ]; then
   echo "Usage: generate-message.sh --config {a=b,c=d......}"
-  echo "Usage: generate-message.sh --config {borker=localhost:9092,topic=employee,maxcount=1000,concurrent=5,schemaregistry=dummy,type=avro,batchsize=16384,buffersize=33554432,file=portinfo.dat}"
+  echo "Usage: generate-message.sh --config {borker=localhost:9092,topic=employee,maxcount=1000,schemarepo=http://localhost:18181/repo,type=avro,batchsize=16384,buffersize=33554432,file=portinfo.dat}"
   exit 1
 fi
 

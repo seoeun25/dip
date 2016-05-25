@@ -36,41 +36,35 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class MessageGenerator {
 
-    public static final String PREFIX = "[MessageGenerator] ";
+    public static final String PREFIX = "[Generator] ";
     public static final String BROKER = "broker";
     public static final String TOPIC = "topic";
     public static final String MAX_COUNT = "maxcount";
     public static final String CONCURRENT = "concurrent";
-    public static final String QUEUE = "queue";
     public static final String SCHEMA_REGISTRY = "schemaregistry";
     public static final String SCHEMA_REPO = "schemarepo";
     public static final String TYPE = "type";
     public static final String BATCH_SIZE = "batchsize";
     public static final String BUFFER_SIZE = "buffersize";
     public static final String FILE = "file";
-    public static final String INIT_TIME = "inittime";
     public static final String VERBOSE = "verbose";
     private static long startTime;
-    private final String DUMMY_SCHEMA_REGISTRY = "com.nexr.dip.client.DummySchemaRegistry";
     private final String AVRO_SCHEMA_REGISTRY = "com.nexr.schemaregistry.AvroSchemaRegistry";
     private String topic;
     private int maxCount = 1000;
-    private int concurrent = 5;
-    private int queueSzie = 1000000; //4g mem
-    private long batchSize = 16384;
-    private long bufferSize = 33554432;
-    private long initTime = 0l;
-    private long waitTime = 5;
+    private int concurrent = 1;
+    private long batchSize = 16384 * 20;
+    private long bufferSize = 33554432 * 20;
+    private boolean verbose = true;
     private DipClient dipClient;
-    private DipRecordBase<GenericRecord> dipRecordBase;
     private DipClient.MESSAGE_TYPE messageType = DipClient.MESSAGE_TYPE.AVRO;
     private Schema schema;
-    private AtomicInteger recordCount = new AtomicInteger(0);
     private AtomicInteger sendCount = new AtomicInteger(0);
     private AtomicInteger failCount = new AtomicInteger(0);
+    private Object lock = new Object();
     private Map<String, String> configMap = new HashMap<String, String>();
     private ExecutorService executorService;
-    private boolean finished;
+    private AtomicInteger senderNumber = new AtomicInteger(0);
 
     public MessageGenerator(String configs) {
 
@@ -78,24 +72,11 @@ public class MessageGenerator {
         parseArgs(configs);
 
         init();
-        produceRecord();
-	
-	if (initTime > 0) {
-            try {
-                Thread.sleep(initTime);
-            } catch (Exception e) {
-
-            }
-        }
-
-
         try {
             initSender();
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-        produceRecord();
     }
 
     public static void main(String... args) {
@@ -115,17 +96,15 @@ public class MessageGenerator {
     }
 
     private void produceRecord() {
-        System.out.println(PREFIX + " produce record for [" + topic + "]");
         try {
             if (topic.equals("employee")) {
                 produceEmployeeRecord();
             } else if (topic.equals("gpx_port")) {
                 produceGpxportRecord(configMap.get(FILE));
-                //produceGpxportRecordTest();
-                //testPerformance();
-            } else if (topic.equals("syslog_info")) {
-                // TODO
-                produceSyslogRecord();
+            } else if (topic.equals("network_info")) {
+                produceNetworkPacketRecord();
+            } else if (topic.equals("sip")) {
+                produceSipJson();
             } else {
                 System.out.println("no producer for " + topic);
             }
@@ -152,18 +131,11 @@ public class MessageGenerator {
             } else {
                 if (configMap.get(SCHEMA_REGISTRY).equals(AVRO_SCHEMA_REGISTRY)) {
                     schema = dipClient.getSchema(topic);
-                } else if (configMap.get(SCHEMA_REGISTRY).equals(DUMMY_SCHEMA_REGISTRY)) {
-                    if (topic.equals("employee")) {
-                        schema = Schema.parse(DummySchemaRegistry.employee_schema);
-                    } else if (topic.equals("gpx_port")) {
-                        schema = Schema.parse(gpx_port_schema);
-                    }
                 }
             }
 
-            System.out.println("schema : " + schema + "\n");
+            System.out.println(PREFIX + "schema : " + schema + "\n");
 
-            //dipRecordBase = new DipRecordBase<GenericRecord>(schema);
             executorService = Executors.newFixedThreadPool(20);
 
         } catch (Exception e) {
@@ -178,10 +150,6 @@ public class MessageGenerator {
             if (keyValue.length == 2) {
                 configMap.put(keyValue[0].toString().trim(), keyValue[1].toString().trim());
             }
-        }
-
-        if (configMap.get(SCHEMA_REGISTRY).equals("dummy")) {
-            configMap.put(SCHEMA_REGISTRY, DUMMY_SCHEMA_REGISTRY);
         }
 
         topic = configMap.get(TOPIC);
@@ -200,11 +168,7 @@ public class MessageGenerator {
         } catch (Exception e) {
 
         }
-        try {
-            queueSzie = Integer.parseInt(configMap.get(QUEUE));
-        } catch (Exception e) {
 
-        }
         try {
             batchSize = Long.parseLong(configMap.get(BATCH_SIZE));
         } catch (Exception e) {
@@ -216,15 +180,7 @@ public class MessageGenerator {
 
         }
         try {
-            initTime = Long.parseLong(configMap.get(INIT_TIME));
-        } catch (Exception e) {
-
-        }
-        try {
-            boolean verbose = Boolean.valueOf(configMap.get(VERBOSE));
-            System.out.println("--- config : " + configMap.get(VERBOSE) + " , " + verbose);
-            waitTime = verbose ? 5 : 0;
-            System.out.println("waitTIme : " + waitTime);
+            verbose = Boolean.valueOf(configMap.get(VERBOSE));
         } catch (Exception e) {
 
         }
@@ -238,77 +194,91 @@ public class MessageGenerator {
         configMap.put(BROKER, "localhost:9092");
         configMap.put(TOPIC, "employee");
         configMap.put(MAX_COUNT, "1000");
-        configMap.put(CONCURRENT, "5");
-        configMap.put(QUEUE, "1000000");
+        configMap.put(CONCURRENT, "1");
         configMap.put(SCHEMA_REGISTRY, "com.nexr.schemaregistry.AvroSchemaRegistry");
         configMap.put(SCHEMA_REPO, "http://localhost:18181/repo");
         configMap.put(TYPE, "avro");
-        configMap.put(BATCH_SIZE, "16384");
-        configMap.put(BUFFER_SIZE, "33554432");
-        configMap.put(INIT_TIME, "1000");
+        configMap.put(BATCH_SIZE, String.valueOf(batchSize));
+        configMap.put(BUFFER_SIZE, String.valueOf(bufferSize));
         configMap.put(VERBOSE, "true");
     }
 
     private void initSender() throws Exception {
+        startTime = System.currentTimeMillis();
         for (int i = 0; i < concurrent; i++) {
             executorService.submit(createSender());
-            Thread.sleep(waitTime);
+            senderNumber.incrementAndGet();
+            Thread.sleep(10);
         }
-        startTime = System.currentTimeMillis();
     }
 
     private void isSendFinish() {
-        if (finished) {
-            return;
-        }
-        int sendCount = this.sendCount.get();
-        System.out.println(Utils.formatTime(System.currentTimeMillis())
-                + ", send finish, send [" + sendCount + "], " + "fail[" + failCount.get() + "], / record [" + recordCount.get() + "]");
-        if ((sendCount + failCount.get()) >= recordCount.get()) {
-            long endTime = System.currentTimeMillis();
-            long period = (endTime - startTime) / 1000;
-            StringBuilder stringBuilder = new StringBuilder();
-            stringBuilder.append(PREFIX + "FINISH : Start : " + Utils.getDateString(startTime) + " ");
-            stringBuilder.append("[" + topic + "] ");
-            stringBuilder.append("[" + sendCount + "] ");
-            stringBuilder.append("[" + period + "s] ");
-            System.out.println(stringBuilder.toString());
+        System.out.println(PREFIX + Utils.formatTime(System.currentTimeMillis()) + " Sender finish, " + senderNumber
+                .decrementAndGet() + "/" + concurrent + " is running");
 
-            try {
-                String fileName = Utils.getDateString(startTime) + "_" + sendCount + "_" + topic + "_" + period + "s";
-                File f = new File(fileName);
-                f.createNewFile();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            close();
+        if (senderNumber.get() == 0) {
+            //System.out.println(PREFIX + "sendFinish");
+            saveResult();
         }
+
     }
+
+    private void saveResult() {
+        int sendCount = this.sendCount.get();
+        System.out.println(PREFIX + Utils.formatTime(System.currentTimeMillis())
+                + ", sent [" + sendCount + "], " + "failed [" + failCount.get() + "]");
+
+        long endTime = System.currentTimeMillis();
+        long period = (endTime - startTime) / 1000;
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append(PREFIX + "FINISH : Start : " + Utils.getDateString(startTime) + " ");
+        stringBuilder.append("[" + topic + "] ");
+        stringBuilder.append("[" + sendCount + "] ");
+        stringBuilder.append("[" + period + "s] ");
+        System.out.println(stringBuilder.toString());
+
+        try {
+            String fileName = Utils.getDateString(startTime) + "_" + sendCount + "_" + topic + "_" + period + "s";
+            File f = new File(fileName);
+            f.createNewFile();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        close();
+    }
+
 
     private Runnable createSender() {
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
-                System.out.println(PREFIX + "Sender start ......");
-                int retry = 0;
+                System.out.println(PREFIX + Utils.formatTime(System.currentTimeMillis()) + " Sender [" + Thread.currentThread()
+                        .getName() + "] start ......");
                 try {
-                    while (true) {
-                        GenericRecord record = blockingQueue.poll();
-                        if (record != null) {
-                            DipRecordBase<GenericRecord> recordBase =
-                                    new DipRecordBase<GenericRecord>(record.getSchema().getName(), record,
-                                            DipClient.MESSAGE_TYPE.AVRO);
-                            try {
-                                dipClient.send(recordBase);
+                    produceRecord();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                isSendFinish();
+            }
+        };
+        return runnable;
+    }
+
+    public void send(DipRecordBase recordBase) throws InterruptedException {
+        try {
+            dipClient.send(recordBase);
 
             int count = sendCount.incrementAndGet();
-            if (count % 100000 == 0 && waitTime > 0) {
-                System.out.println(Utils.getDateString(System.currentTimeMillis()) + ", send [" +
-                        Thread.currentThread().getName() + "] " + count );
-                System.out.println("memory : total : " + Runtime.getRuntime().totalMemory() + ", max : " + Runtime
-                        .getRuntime().maxMemory() + " , free " + Runtime.getRuntime().freeMemory());
-                Thread.sleep(waitTime);
+            if (count % 1000000 == 0) {
+                if (verbose) {
+                    System.out.println(Utils.getDateString(System.currentTimeMillis()) + ", send [" +
+                            Thread.currentThread().getName() + "] " + count);
+                    System.out.println("memory : total : " + Runtime.getRuntime().totalMemory() + ", max : " + Runtime
+                            .getRuntime().maxMemory() + " , free " + Runtime.getRuntime().freeMemory());
+                }
+                Thread.sleep(1);
             }
         } catch (DipException e) {
             System.out.println("Failed to send : " + e.getMessage() + ", skip this line : " + recordBase.getData().toString());
@@ -349,38 +319,32 @@ public class MessageGenerator {
 
     public void close() {
         dipClient.close();
-        finished = true;
         System.exit(0);
     }
 
     public void produceEmployeeRecord() throws Exception {
-        System.out.println(PREFIX + Utils.formatTime(System.currentTimeMillis()) + " : produce record for " +
-                topic);
-
         //long time = getTime(2015, 07, 27, 20, 30);
         long time = System.currentTimeMillis();
 
         int i = 0;
         while (true) {
             GenericRecord record = new GenericData.Record(schema);
-            String payload = String.valueOf(i) + "::: seoeun---azrael-seoeun---azrael-seoeun---azrael-seoeun---azrael-seoeun" +
-                    "---azrael-seoeun---azrael-seoeun---azrael-seoeun---azrael-seoeun---azrael-seoeun" +
-                    "---azrael-seoeun---azrael-seoeun---azrael-END";
-            record.put("name", payload);
-            record.put("favorite_number", String.valueOf(i));
-            record.put("wrk_dt", time);
-            record.put("src_info", "employee");
-
-                DipRecordBase<GenericRecord> recordBase =
-                        new DipRecordBase<>(topic, record, messageType);
+            synchronized (lock) {
+                String payload = String.valueOf(i) + "::: seoeun---azrael-seoeun---azrael-seoeun---azrael-seoeun---azrael-seoeun" +
+                        "---azrael-seoeun---azrael-seoeun---azrael-seoeun---azrael-seoeun---azrael-seoeun" +
+                        "---azrael-seoeun---azrael-seoeun---azrael-END";
+                record.put("name", payload);
+                record.put("favorite_number", String.valueOf(i));
+                record.put("wrk_dt", time);
+                record.put("src_info", "employee");
+            }
+            DipRecordBase<GenericRecord> recordBase = new DipRecordBase<>(topic, record, messageType);
             send(recordBase);
 
-            if (recordCount.incrementAndGet() == maxCount) {
+            if (sendCount.get() >= maxCount) {
                 break;
             }
         }
-        System.out.println(PREFIX + Utils.formatTime(System.currentTimeMillis()) + " : produce Record end : " +
-                recordCount.get());
     }
 
     public void produceNetworkPacketRecord() throws Exception {
@@ -412,12 +376,12 @@ public class MessageGenerator {
             DipRecordBase<GenericRecord> recordBase = new DipRecordBase<>(topic, record, messageType);
             send(recordBase);
 
-            if (recordCount.incrementAndGet() >= maxCount) {
+            if (sendCount.get() >= maxCount) {
                 break;
             }
         }
-        System.out.println(PREFIX + Utils.formatTime(System.currentTimeMillis()) + " : produce Record end : " +
-                recordCount.get());
+        System.out.println(PREFIX + Utils.formatTime(System.currentTimeMillis()) + " : produce end : " +
+                sendCount.get());
     }
 
     public void produceSipJson() throws Exception {
@@ -433,7 +397,7 @@ public class MessageGenerator {
             String timeLable = Utils.formatTime(time, "yyyy-MM-dd", "UTC");
             timeLable = timeLable + "T" + Utils.formatTime(time, "hh:mm:ss", "UTC") + "Z";
             String msg = "";
-            if ((recordCount.get() + 1) % 2 == 0) {
+            if ((sendCount.get() + 1) % 2 == 0) {
                 msg = "{\"timestamp\": \"" + timeLable + "\", \"sip\": \"a\", \"packet_total\": \"14\"}";
             } else {
                 msg = "{\"timestamp\": \"" + timeLable + "\", \"sip\": \"b\", \"packet_total\": \"10\"}";
@@ -444,12 +408,12 @@ public class MessageGenerator {
             DipRecordBase<GenericRecord> recordBase = new DipRecordBase<>(topic, record, messageType);
             send(recordBase);
 
-            if (recordCount.incrementAndGet() >= maxCount) {
+            if (sendCount.get() >= maxCount) {
                 break;
             }
         }
-        System.out.println(PREFIX + Utils.formatTime(System.currentTimeMillis()) + " : produce Record end : " +
-                recordCount.get());
+        System.out.println(PREFIX + Utils.formatTime(System.currentTimeMillis()) + " : produce end : " +
+                sendCount.get());
     }
 
     public GenericRecord createGpxPort(String line, long time) {
@@ -472,7 +436,6 @@ public class MessageGenerator {
     }
 
     public void produceGpxportRecord(String file) throws Exception {
-        startTime = System.currentTimeMillis();
         System.out.println(PREFIX + "produce record for " + topic + ", maxCount : " + maxCount + ", from [" +
                 file + "]");
 
@@ -496,7 +459,6 @@ public class MessageGenerator {
                         GenericRecord record = createGpxPort(stringBuilder.toString(), time);
                         DipRecordBase<GenericRecord> recordBase = new DipRecordBase(topic, record, messageType);
                         send(recordBase);
-                        recordCount.getAndIncrement();
                         stringBuilder.delete(0, stringBuilder.length());
                     }
                 } else {
@@ -504,120 +466,20 @@ public class MessageGenerator {
                 }
             }
             buffer.clear(); // do something with the data and clear/compact it.
-            if ((recordCount.get() % 1000) == 0) {
+            if ((sendCount.get() % 1000) == 0) {
                 Thread.sleep(10);
             }
-            if (recordCount.get() > maxCount) {
+            if (sendCount.get() >= maxCount) {
                 break;
             }
         }
 
-        System.out.println(PREFIX + Utils.formatTime(System.currentTimeMillis()) + " : produce record end : " +
-                recordCount
-                        .get());
+        System.out.println(PREFIX + Utils.formatTime(System.currentTimeMillis()) + " : produce end : " +
+                sendCount.get());
 
     }
 
-    public void produceGpxportRecordTest() throws Exception {
-        startTime = System.currentTimeMillis();
-        System.out.println(PREFIX + Utils.formatTime(System.currentTimeMillis()) + " : produce test11 record for " +
-                topic + ", maxCount : ");
 
-        String wrk_dt = "2015-09-25";
-        long time = Utils.parseTime(wrk_dt, "yyyy-MM-dd");
-        System.out.println("wrk_dt : " + wrk_dt + ", " + Utils.formatTime(time) + " : start : " + Utils
-                .formatTime(System.currentTimeMillis()));
-
-        String data = "221.161.133.15gi8,B3871,221.161.133.15,8,./d,a,a/auto,.,15,104000/-,2015-10-25 20:00:09    ";
-        GenericRecord record = createGpxPort(data, time);
-        System.out.println("byte length : " + data.getBytes().length);
-        DipRecordBase<GenericRecord> dipRecordBase = new DipRecordBase<>(topic, record, DipClient.MESSAGE_TYPE.AVRO);
-        byte[] payload = dipClient.getByteOf(topic, record);
-        if (payload == null) {
-            System.out.println("payload is null");
-        } else {
-            System.out.println("payload : " + payload.length);
-        }
-        ProducerRecord<String, byte[]> producerRecord = new ProducerRecord<String, byte[]>(topic, null, payload);
-
-
-//        while (true) {
-//
-//            dipClient.send(producerRecord);
-//            recordCount.incrementAndGet();
-//
-//            if ((recordCount.get() % 1000) == 0) {
-//                Thread.sleep(10);
-//            }
-//            if (recordCount.get() > maxCount) {
-//                break;
-//            }
-//        }
-
-        for (int i = 0; i < maxCount; i++) {
-            dipClient.send(producerRecord);
-            recordCount.incrementAndGet();
-        }
-
-        System.out.println(PREFIX + Utils.formatTime(System.currentTimeMillis()) + " : produce test record end : " +
-                recordCount
-                        .get());
-
-    }
-
-    public void testProducerPerformance() throws Exception {
-        recordCount.set(0);
-        System.err.println("USAGE: java " + ProducerPerformance.class.getName() +
-                " topic_name num_records record_size target_records_sec [prop_name=prop_value]*");
-        System.out.println(PREFIX + Utils.getDateString(System.currentTimeMillis()) + " : start performance test");
-
-        /* parse args */
-        String topicName = topic;
-        long numRecords = maxCount;
-        int recordSize = 100;
-        int throughput = -1;
-
-        Properties props = new Properties();
-        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer");
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.ByteArraySerializer");
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
-        KafkaProducer<byte[], byte[]> producer = new KafkaProducer<byte[], byte[]>(props);
-
-        /* setup perf test */
-        byte[] payload = new byte[recordSize];
-        Arrays.fill(payload, (byte) 1);
-        ProducerRecord<byte[], byte[]> record = new ProducerRecord<byte[], byte[]>(topicName, payload);
-        //long sleepTime = NS_PER_SEC / throughput;
-        //long sleepDeficitNs = 0;
-        for (int i = 0; i < numRecords; i++) {
-            long sendStart = System.currentTimeMillis();
-            //Callback cb = stats.nextCompletion(sendStart, payload.length, stats);
-            producer.send(record, null);
-            recordCount.incrementAndGet();
-
-            /*
-             * Maybe sleep a little to control throughput. Sleep time can be a bit inaccurate for times < 1 ms so
-             * instead of sleeping each time instead wait until a minimum sleep time accumulates (the "sleep deficit")
-             * and then make up the whole deficit in one longer sleep.
-             */
-//            if (throughput > 0) {
-//                sleepDeficitNs += sleepTime;
-//                if (sleepDeficitNs >= MIN_SLEEP_NS) {
-//                    long sleepMs = sleepDeficitNs / 1000000;
-//                    long sleepNs = sleepDeficitNs - sleepMs * 1000000;
-//                    Thread.sleep(sleepMs, (int) sleepNs);
-//                    sleepDeficitNs = 0;
-//                }
-//            }
-        }
-
-        /* print final results */
-        producer.close();
-        //stats.printTotal();
-
-        System.out.println(PREFIX + Utils.getDateString(System.currentTimeMillis()) + " : end performance test : " +
-                recordCount.get());
-    }
 
     public void testReadFile() throws IOException {
         System.out.println("testReadFile");
