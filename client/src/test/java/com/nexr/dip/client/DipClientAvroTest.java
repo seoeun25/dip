@@ -4,7 +4,6 @@ import com.linkedin.camus.etl.kafka.coders.KafkaAvroMessageEncoder;
 import com.nexr.dip.DipException;
 import com.nexr.dip.conf.Configurable;
 import com.nexr.dip.conf.Context;
-import com.nexr.dip.producer.Producer;
 import com.nexr.dip.record.DipRecordBase;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
@@ -20,16 +19,9 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Properties;
-import java.util.SortedMap;
 
 public class DipClientAvroTest {
 
@@ -43,12 +35,8 @@ public class DipClientAvroTest {
         Properties properties = getProperteis();
         try {
             dipClient = new DipClient(baseUrl, topic, DipClient.MESSAGE_TYPE.AVRO, properties);
-            //DummySchemaRegistry schemaRegistry = new DummySchemaRegistry();
-            //schemaRegistry.init(properties);
             Context context = new Context();
             context.putAll(properties);
-            //dipClient.start(schemaRegistry);
-            //dipClient.start(Producer.PRODUCER_TYPE.simple.toString(), schemaRegistry);
             dipClient.start();
         } catch (DipException e) {
             e.printStackTrace();
@@ -56,14 +44,13 @@ public class DipClientAvroTest {
     }
 
     private static Properties getProperteis() {
-        String schemaRegistryClass = "com.nexr.dip.client.DummySchemaRegistry";
+        String schemaRegistryClass = "com.nexr.schemaregistry.AvroSchemaRegistry";
         Properties properties = new Properties();
         properties.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
         properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
         properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         properties.put(ProducerConfig.BLOCK_ON_BUFFER_FULL_CONFIG, "false");
-        properties.put(ProducerConfig.ACKS_CONFIG, "all");
-        //properties.put(Configurable.SCHEMAREGISTRY_CLASS, schemaRegistryClass); //com.nexr.schemaregistry.AvroSchemaRegistry
+        properties.put(ProducerConfig.ACKS_CONFIG, "1");
         properties.put(Configurable.SCHEMAREGIDTRY_URL, "http://localhost:18181/repo");
         properties.put(KafkaAvroMessageEncoder.KAFKA_MESSAGE_CODER_SCHEMA_REGISTRY_CLASS, schemaRegistryClass);
         return properties;
@@ -80,8 +67,8 @@ public class DipClientAvroTest {
 
     @Test
     public void sendRecordTest() {
-        long time = getTime(2015, 10, 15, 20, 30);
-        //long time = System.currentTimeMillis();
+        //long time = getTime(2015, 10, 15, 20, 30);
+        long time = System.currentTimeMillis();
 
         String topic = "employee";
         Schema schema = dipClient.getSchema(topic);
@@ -93,7 +80,7 @@ public class DipClientAvroTest {
             record.put("name", i + "::seoeun-33-hello-azrael");
             record.put("favorite_number", String.valueOf(i));
             record.put("wrk_dt", time);
-            record.put("srcinfo", topic);
+            record.put("src_info", topic);
 
             DipRecordBase<GenericRecord> dipRecordBase = new DipRecordBase(topic, record, DipClient.MESSAGE_TYPE.AVRO);
 

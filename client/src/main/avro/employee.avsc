@@ -1,12 +1,13 @@
 {"namespace": "com.nexr.dip.avro.schema",
-  "type": "record",
-  "name": "employee",
-  "fields": [
-      {"name": "name", "type": "string"},
-      {"name": "favorite_number",  "type": ["string", "null"]},
-      {"name": "favorite_color", "type": ["string", "null"]},
-      {"name": "wrk_dt", "type": "long"},
-      {
+ "type": "record",
+ "name": "employee",
+ "fields": [
+     {"name": "name", "type": "string"},
+     {"name": "favorite_number", "type": ["string", "null"]},
+     {"name": "favorite_color", "type": ["string", "null"]},
+     {"name": "wrk_dt", "type": "long"},
+     {"name": "src_info", "type": "string"},
+     {
          "name": "header",
          "type": {
              "type" : "record",
@@ -16,5 +17,5 @@
              ]
          }
       }
-  ]
- }
+ ]
+}
