@@ -48,7 +48,6 @@ public class DipServer implements AppService {
 
     public static void main(String[] args) {
         String cmd = args[0];
-        System.out.println("command : " + cmd);
 
         if ("start".equals(cmd)) {
             AppService app = DipServer.getInstance();
