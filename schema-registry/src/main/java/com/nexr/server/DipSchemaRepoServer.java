@@ -36,7 +36,6 @@ public class DipSchemaRepoServer implements AppService {
 
     public static void main(String[] args) {
         String cmd = args[0];
-        System.out.println("command : " + cmd);
 
         if ("start".equals(cmd)) {
             AppService app = DipSchemaRepoServer.getInstance();
@@ -72,7 +71,7 @@ public class DipSchemaRepoServer implements AppService {
     }
 
     public void start() throws DipException {
-        LOG.info("========= Avro Repo Starting ......   ========");
+        LOG.info("========= Schema Repo Starting ......   ========");
 
         init();
 
@@ -80,10 +79,10 @@ public class DipSchemaRepoServer implements AppService {
 
         try {
             jettyServer.start();
-            LOG.info("Avro Repo Started !! ");
+            LOG.info("Schema Repo Started !! ");
             jettyServer.join();
         } catch (Exception e) {
-            LOG.error("Error starting Jetty. Avro Repo may not be available.", e);
+            LOG.error("Error starting Jetty. Schema Repo may not be available.", e);
         }
 
     }
@@ -109,9 +108,9 @@ public class DipSchemaRepoServer implements AppService {
             jettyServer.stop();
             jettyServer.join();
         } catch (Exception ex) {
-            LOG.error("Error stopping Jetty. Avro Repo may not be available.", ex);
+            LOG.error("Error stopping Jetty. Schema Repo may not be available.", ex);
         }
-        LOG.info("========= Avro Repo Shutdown ======== \n");
+        LOG.info("========= Schema Repo Shutdown ======== \n");
 
     }
 
