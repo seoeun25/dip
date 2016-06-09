@@ -20,7 +20,6 @@ fi
 if [ "$LOG_DIR" == "" ]; then
     LOG_DIR=${DIP_HOME}/logs
 fi
-mkdir -p $LOG_DIR
 
 if [ "$LOG_ROOTLOGGER" == "" ]; then
     LOG_ROOTLOGGER="INFO,console"
@@ -38,5 +37,7 @@ if [ "$JAVA_OPT" == "" ]; then
     JAVA_OPT="-Xms2048m -Xmx4096m"
 fi
 
-java ${JAVA_OPT} -cp ${CLASS_PATH} -Dlog.dir=${LOG_DIR} -Dlog.rootLogger=${LOG_ROOTLOGGER} com.nexr.dip.server.DipServer start
+JAVA=$JAVA_HOME/bin/java
+exec "$JAVA" ${JAVA_OPT} -cp ${CLASS_PATH} -Dlog.dir=${LOG_DIR} -Dlog.rootLogger=${LOG_ROOTLOGGER} com.nexr.dip.server.DipServer start
+
 
