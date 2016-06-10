@@ -75,7 +75,7 @@ public class DipClientAvroTest {
         System.out.println(schema);
 
         long start = System.currentTimeMillis();
-        for (int i = 0; i < 3000; i++) {
+        for (int i = 0; i < 30; i++) {
             GenericRecord record = new GenericData.Record(schema);
             record.put("name", i + "::seoeun-33-hello-azrael");
             record.put("favorite_number", String.valueOf(i));

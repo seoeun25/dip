@@ -13,8 +13,8 @@
         <hadoop.version>2.7.1</hadoop.version>
         <hive.version>1.2.0</hive.version>
         <avro.version>1.7.5</avro.version>
-        <camus.version>0.1.0-SNAPSHOT</camus.version>
-        <kafka.version>0.8.2.0</kafka.version>
+        <camus.version>0.1.1</camus.version>
+        <kafka.version>0.9.0.1</kafka.version>
         <openjpa.version>2.2.2</openjpa.version>
         <jersey.version>1.9</jersey.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

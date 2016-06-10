@@ -279,7 +279,7 @@ public class DipClient<D> implements Configurable {
             map.put(ProducerConfig.BUFFER_MEMORY_CONFIG, "671088640");
             map.put(Configurable.SCHEMAREGISTRY_CLASS, "com.nexr.schemaregistry.AvroSchemaRegistry");
             map.put(KafkaAvroMessageEncoder.KAFKA_MESSAGE_CODER_SCHEMA_REGISTRY_CLASS, "com.nexr.schemaregistry.AvroSchemaRegistry");
-            map.put("partitioner.class", "kafka.producer.ByteArrayPartitioner");
+            //map.put("partitioner.class", "kafka.producer.ByteArrayPartitioner");
             return map;
         }
     }

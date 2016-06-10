@@ -2,13 +2,11 @@ package com.nexr.dip.tool;
 
 import com.nexr.dip.common.Utils;
 import junit.framework.Assert;
-import kafka.api.ConsumerMetadataRequest;
 import kafka.cluster.Broker;
 import kafka.common.ErrorMapping;
 import kafka.common.OffsetAndMetadata;
 import kafka.common.OffsetMetadataAndError;
 import kafka.common.TopicAndPartition;
-import kafka.javaapi.ConsumerMetadataResponse;
 import kafka.javaapi.OffsetCommitRequest;
 import kafka.javaapi.OffsetCommitResponse;
 import kafka.javaapi.OffsetFetchRequest;
@@ -77,7 +75,7 @@ public class SimpleKafkaConsumerTest {
         int partition = 0;
         PartitionMetadata partitionMetadata = simpleKafkaConsumer.findLeader(brokers, port, topic, partition);
         Assert.assertNotNull(partitionMetadata);
-        kafka.cluster.Broker broker = partitionMetadata.leader();
+        kafka.cluster.BrokerEndPoint broker = partitionMetadata.leader();
         System.out.println("broker host : " + broker.host());
     }
 
@@ -147,165 +145,165 @@ public class SimpleKafkaConsumerTest {
     @Test
     public void testOffsetManager() {
         String topic = "employee";
-        BlockingChannel channel = new BlockingChannel("sembp", 9092,
-                BlockingChannel.UseDefaultBufferSize(),
-                BlockingChannel.UseDefaultBufferSize(),
-                5000 /* read timeout in millis */);
-        channel.connect();
-
-        int correlationId = 0;
-
-        channel.send(new ConsumerMetadataRequest(MY_GROUP, ConsumerMetadataRequest.CurrentVersion(), correlationId++, MY_CLIENTID));
-        ConsumerMetadataResponse metadataResponse = ConsumerMetadataResponse.readFrom(channel.receive().buffer());
-
-        if (metadataResponse.errorCode() == ErrorMapping.NoError()) {
-            Broker offsetManager = metadataResponse.coordinator();
-            // if the coordinator is different, from the above channel's host then reconnect
-            channel.disconnect();
-            channel = new BlockingChannel(offsetManager.host(), offsetManager.port(),
-                    BlockingChannel.UseDefaultBufferSize(),
-                    BlockingChannel.UseDefaultBufferSize(),
-                    5000 /* read timeout in millis */);
-            channel.connect();
-            System.out.println("---- ConsumerMetadataRequest : NoError : offsetManager : " + offsetManager.connectionString());
-            System.out.println(offsetManager.id() + ", " + offsetManager.toString());
-        } else {
-            // retry (after backoff)
-            System.out.println("---- Failed to get OffsetManger meta : errorCode : " + metadataResponse.errorCode());
-        }
-
-        // commit
-        long now = System.currentTimeMillis();
-        Map<TopicAndPartition, OffsetAndMetadata> offsets = new LinkedHashMap<TopicAndPartition, OffsetAndMetadata>();
-        offsets.put(testPartition0, new OffsetAndMetadata(100L, "--170--associated metadata", now));
-        offsets.put(testPartition1, new OffsetAndMetadata(200L, "--170--more metadata", now));
-        OffsetCommitRequest commitRequest = new OffsetCommitRequest(
-                MY_GROUP,
-                offsets,
-                correlationId++,
-                MY_CLIENTID,
-                (short) 1 /* version */); // version 1 and above commit to Kafka, version 0 commits to ZooKeeper
-        try {
-            channel.send(commitRequest.underlying());
-            OffsetCommitResponse commitResponse = OffsetCommitResponse.readFrom(channel.receive().buffer());
-            if (commitResponse.hasError()) {
-                Object error = commitResponse.errors().values();
-                System.out.println("error : " + error.getClass().getName());
-                for (Object errors: commitResponse.errors().values()) {
-                    short partitionErrorCode = 0;
-                    if (partitionErrorCode == ErrorMapping.OffsetMetadataTooLargeCode()) {
-                        // You must reduce the size of the metadata if you wish to retry
-                    } else if (partitionErrorCode == ErrorMapping.NotCoordinatorForConsumerCode() || partitionErrorCode == ErrorMapping.ConsumerCoordinatorNotAvailableCode()) {
-                        channel.disconnect();
-                        // Go to step 1 (offset manager has moved) and then retry the commit to the new offset manager
-                    } else {
-                        // log and retry the commit
-                    }
-                }
-            }
-        } catch (Exception ioe) {
-            channel.disconnect();
-            // Go to step 1 and then retry the commit
-        }
-
-        // How to fetch offsets
-        System.out.println("correlationId : " + correlationId);
-        List<TopicAndPartition> partitions = new ArrayList<TopicAndPartition>();
-        partitions.add(testPartition0);
-        partitions.add(testPartition1);
-
-        OffsetFetchRequest fetchRequest = new OffsetFetchRequest(
-                MY_GROUP,
-                partitions,
-                (short) 1 /* version */, // version 1 and above fetch from Kafka, version 0 fetches from ZooKeeper
-                correlationId++,
-                MY_CLIENTID);
-        try {
-            channel.send(fetchRequest.underlying());
-            OffsetFetchResponse fetchResponse = OffsetFetchResponse.readFrom(channel.receive().buffer());
-            OffsetMetadataAndError result = fetchResponse.offsets().get(testPartition1);
-            System.out.println("result : " + result.toString());
-            short offsetFetchErrorCode = result.error();
-            if (offsetFetchErrorCode == ErrorMapping.NotCoordinatorForConsumerCode()) {
-                channel.disconnect();
-                System.out.println("---- NotCoordinatorForConsumerCode");
-                // Go to step 1 and retry the offset fetch
-            //} else if (errorCode == ErrorMapping.OffsetsLoadInProgress()) {
-                // retry the offset fetch (after backoff)
-            } else if (offsetFetchErrorCode == ErrorMapping.NoError()) {
-                System.out.println("---- NoError");
-                long retrievedOffset = result.offset();
-                String retrievedMetadata = result.metadata();
-                System.out.println("retrievedOffset : " + retrievedOffset);
-                System.out.println("retrievedMetadata : " + retrievedMetadata);
-            } else {
-                System.out.println("offsetFetchErrorCode : " + offsetFetchErrorCode);
-
-            }
-        }
-        catch (Exception e) {
-            channel.disconnect();
-            // Go to step 1 and then retry offset fetch after backoff
-        }
+//        BlockingChannel channel = new BlockingChannel("sembp", 9092,
+//                BlockingChannel.UseDefaultBufferSize(),
+//                BlockingChannel.UseDefaultBufferSize(),
+//                5000 /* read timeout in millis */);
+//        channel.connect();
+//
+//        int correlationId = 0;
+//
+//        channel.send(new ConsumerMetadataRequest(MY_GROUP, ConsumerMetadataRequest.CurrentVersion(), correlationId++, MY_CLIENTID));
+//        ConsumerMetadataResponse metadataResponse = ConsumerMetadataResponse.readFrom(channel.receive().buffer());
+//
+//        if (metadataResponse.errorCode() == ErrorMapping.NoError()) {
+//            Broker offsetManager = metadataResponse.coordinator();
+//            // if the coordinator is different, from the above channel's host then reconnect
+//            channel.disconnect();
+//            channel = new BlockingChannel(offsetManager.host(), offsetManager.port(),
+//                    BlockingChannel.UseDefaultBufferSize(),
+//                    BlockingChannel.UseDefaultBufferSize(),
+//                    5000 /* read timeout in millis */);
+//            channel.connect();
+//            System.out.println("---- ConsumerMetadataRequest : NoError : offsetManager : " + offsetManager.connectionString());
+//            System.out.println(offsetManager.id() + ", " + offsetManager.toString());
+//        } else {
+//            // retry (after backoff)
+//            System.out.println("---- Failed to get OffsetManger meta : errorCode : " + metadataResponse.errorCode());
+//        }
+//
+//        // commit
+//        long now = System.currentTimeMillis();
+//        Map<TopicAndPartition, OffsetAndMetadata> offsets = new LinkedHashMap<TopicAndPartition, OffsetAndMetadata>();
+//        offsets.put(testPartition0, new OffsetAndMetadata(100L, "--170--associated metadata", now));
+//        offsets.put(testPartition1, new OffsetAndMetadata(200L, "--170--more metadata", now));
+//        OffsetCommitRequest commitRequest = new OffsetCommitRequest(
+//                MY_GROUP,
+//                offsets,
+//                correlationId++,
+//                MY_CLIENTID,
+//                (short) 1 /* version */); // version 1 and above commit to Kafka, version 0 commits to ZooKeeper
+//        try {
+//            channel.send(commitRequest.underlying());
+//            OffsetCommitResponse commitResponse = OffsetCommitResponse.readFrom(channel.receive().buffer());
+//            if (commitResponse.hasError()) {
+//                Object error = commitResponse.errors().values();
+//                System.out.println("error : " + error.getClass().getName());
+//                for (Object errors: commitResponse.errors().values()) {
+//                    short partitionErrorCode = 0;
+//                    if (partitionErrorCode == ErrorMapping.OffsetMetadataTooLargeCode()) {
+//                        // You must reduce the size of the metadata if you wish to retry
+//                    } else if (partitionErrorCode == ErrorMapping.NotCoordinatorForConsumerCode() || partitionErrorCode == ErrorMapping.ConsumerCoordinatorNotAvailableCode()) {
+//                        channel.disconnect();
+//                        // Go to step 1 (offset manager has moved) and then retry the commit to the new offset manager
+//                    } else {
+//                        // log and retry the commit
+//                    }
+//                }
+//            }
+//        } catch (Exception ioe) {
+//            channel.disconnect();
+//            // Go to step 1 and then retry the commit
+//        }
+//
+//        // How to fetch offsets
+//        System.out.println("correlationId : " + correlationId);
+//        List<TopicAndPartition> partitions = new ArrayList<TopicAndPartition>();
+//        partitions.add(testPartition0);
+//        partitions.add(testPartition1);
+//
+//        OffsetFetchRequest fetchRequest = new OffsetFetchRequest(
+//                MY_GROUP,
+//                partitions,
+//                (short) 1 /* version */, // version 1 and above fetch from Kafka, version 0 fetches from ZooKeeper
+//                correlationId++,
+//                MY_CLIENTID);
+//        try {
+//            channel.send(fetchRequest.underlying());
+//            OffsetFetchResponse fetchResponse = OffsetFetchResponse.readFrom(channel.receive().buffer());
+//            OffsetMetadataAndError result = fetchResponse.offsets().get(testPartition1);
+//            System.out.println("result : " + result.toString());
+//            short offsetFetchErrorCode = result.error();
+//            if (offsetFetchErrorCode == ErrorMapping.NotCoordinatorForConsumerCode()) {
+//                channel.disconnect();
+//                System.out.println("---- NotCoordinatorForConsumerCode");
+//                // Go to step 1 and retry the offset fetch
+//            //} else if (errorCode == ErrorMapping.OffsetsLoadInProgress()) {
+//                // retry the offset fetch (after backoff)
+//            } else if (offsetFetchErrorCode == ErrorMapping.NoError()) {
+//                System.out.println("---- NoError");
+//                long retrievedOffset = result.offset();
+//                String retrievedMetadata = result.metadata();
+//                System.out.println("retrievedOffset : " + retrievedOffset);
+//                System.out.println("retrievedMetadata : " + retrievedMetadata);
+//            } else {
+//                System.out.println("offsetFetchErrorCode : " + offsetFetchErrorCode);
+//
+//            }
+//        }
+//        catch (Exception e) {
+//            channel.disconnect();
+//            // Go to step 1 and then retry offset fetch after backoff
+//        }
     }
 
     @Test
     public void testOffsetManager2() throws Exception{
-        long now = System.currentTimeMillis();
-        Map<TopicAndPartition, OffsetAndMetadata> offsets = new LinkedHashMap<TopicAndPartition, OffsetAndMetadata>();
-        offsets.put(testPartition0, new OffsetAndMetadata(42682, "-- associated metadata", -1L));
-        offsets.put(testPartition1, new OffsetAndMetadata(15821, "-- more metadata 1", -1L));
-
-        int correlationId = 1;
-        OffsetCommitRequest commitRequest = new OffsetCommitRequest(
-                MY_GROUP,
-                offsets,
-                correlationId,
-                MY_GROUP,
-                (short) 1 /* version */); // version 1 and above commit to Kafka, version 0 commits to ZooKeeper
-
-        SimpleConsumer simpleConsumer = createSimpleConsumer(MY_GROUP);
-        OffsetCommitResponse commitResponse = simpleConsumer.commitOffsets(commitRequest);
-        System.out.println("result : " + commitResponse.getClass().getName());
-
-        if (commitResponse.hasError()) {
-            Object error = commitResponse.errors().values();
-            System.out.println("error : " + error.getClass().getName());
-//            for (Object errors: commitResponse.errors().values()) {
-//                short partitionErrorCode = 0;
-//                if (partitionErrorCode == ErrorMapping.OffsetMetadataTooLargeCode()) {
-//                    // You must reduce the size of the metadata if you wish to retry
-//                } else if (partitionErrorCode == ErrorMapping.NotCoordinatorForConsumerCode() || partitionErrorCode == ErrorMapping.ConsumerCoordinatorNotAvailableCode()) {
-//                    channel.disconnect();
-//                    // Go to step 1 (offset manager has moved) and then retry the commit to the new offset manager
-//                } else {
-//                    // log and retry the commit
-//                }
-//            }
-        }
-
-        simpleConsumer = createSimpleConsumer(MY_GROUP);
-        Thread.sleep(1000);
-        List<TopicAndPartition> partitions = new ArrayList<TopicAndPartition>();
-        //TopicAndPartition testPartition38 = new TopicAndPartition("__consumer_offsets", 18);
-        partitions.add(testPartition0);
-        partitions.add(testPartition1);
-
-        OffsetFetchRequest fetchRequest = new OffsetFetchRequest(
-                MY_GROUP,
-                partitions,
-                (short) 1 /* version */, // version 1 and above fetch from Kafka, version 0 fetches from ZooKeeper
-                correlationId,
-                MY_GROUP);
-
-        Map<TopicAndPartition,OffsetMetadataAndError> offsets1=
-                simpleConsumer.fetchOffsets(fetchRequest).offsets();
-        for (Map.Entry<TopicAndPartition, OffsetMetadataAndError> entry: offsets1.entrySet()) {
-            System.out.println(entry.getKey().topic() + ", " + entry.getKey().partition());
-            System.out.println("-- metadata : " + entry.getValue().metadata());
-            System.out.println("-- error : " + entry.getValue().error() + " : " + getError(entry.getValue().error()));
-            System.out.println("-- offset : " + entry.getValue().offset());
-        }
+//        long now = System.currentTimeMillis();
+//        Map<TopicAndPartition, OffsetAndMetadata> offsets = new LinkedHashMap<TopicAndPartition, OffsetAndMetadata>();
+//        offsets.put(testPartition0, new OffsetAndMetadata(42682, "-- associated metadata", -1L));
+//        offsets.put(testPartition1, new OffsetAndMetadata(15821, "-- more metadata 1", -1L));
+//
+//        int correlationId = 1;
+//        OffsetCommitRequest commitRequest = new OffsetCommitRequest(
+//                MY_GROUP,
+//                offsets,
+//                correlationId,
+//                MY_GROUP,
+//                (short) 1 /* version */); // version 1 and above commit to Kafka, version 0 commits to ZooKeeper
+//
+//        SimpleConsumer simpleConsumer = createSimpleConsumer(MY_GROUP);
+//        OffsetCommitResponse commitResponse = simpleConsumer.commitOffsets(commitRequest);
+//        System.out.println("result : " + commitResponse.getClass().getName());
+//
+//        if (commitResponse.hasError()) {
+//            Object error = commitResponse.errors().values();
+//            System.out.println("error : " + error.getClass().getName());
+////            for (Object errors: commitResponse.errors().values()) {
+////                short partitionErrorCode = 0;
+////                if (partitionErrorCode == ErrorMapping.OffsetMetadataTooLargeCode()) {
+////                    // You must reduce the size of the metadata if you wish to retry
+////                } else if (partitionErrorCode == ErrorMapping.NotCoordinatorForConsumerCode() || partitionErrorCode == ErrorMapping.ConsumerCoordinatorNotAvailableCode()) {
+////                    channel.disconnect();
+////                    // Go to step 1 (offset manager has moved) and then retry the commit to the new offset manager
+////                } else {
+////                    // log and retry the commit
+////                }
+////            }
+//        }
+//
+//        simpleConsumer = createSimpleConsumer(MY_GROUP);
+//        Thread.sleep(1000);
+//        List<TopicAndPartition> partitions = new ArrayList<TopicAndPartition>();
+//        //TopicAndPartition testPartition38 = new TopicAndPartition("__consumer_offsets", 18);
+//        partitions.add(testPartition0);
+//        partitions.add(testPartition1);
+//
+//        OffsetFetchRequest fetchRequest = new OffsetFetchRequest(
+//                MY_GROUP,
+//                partitions,
+//                (short) 1 /* version */, // version 1 and above fetch from Kafka, version 0 fetches from ZooKeeper
+//                correlationId,
+//                MY_GROUP);
+//
+//        Map<TopicAndPartition,OffsetMetadataAndError> offsets1=
+//                simpleConsumer.fetchOffsets(fetchRequest).offsets();
+//        for (Map.Entry<TopicAndPartition, OffsetMetadataAndError> entry: offsets1.entrySet()) {
+//            System.out.println(entry.getKey().topic() + ", " + entry.getKey().partition());
+//            System.out.println("-- metadata : " + entry.getValue().metadata());
+//            System.out.println("-- error : " + entry.getValue().error() + " : " + getError(entry.getValue().error()));
+//            System.out.println("-- offset : " + entry.getValue().offset());
+//        }
     }
 
     private String getError(short errorCode) {

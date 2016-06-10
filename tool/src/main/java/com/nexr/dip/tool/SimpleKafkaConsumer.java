@@ -269,7 +269,7 @@ public class SimpleKafkaConsumer {
         }
         if (returnMetaData != null) {
             brokers.clear();
-            for (kafka.cluster.Broker replica : returnMetaData.replicas()) {
+            for (kafka.cluster.BrokerEndPoint replica : returnMetaData.replicas()) {
                 brokers.add(replica.host());
             }
         }
