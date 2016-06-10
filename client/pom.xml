@@ -4,12 +4,12 @@
     <parent>
         <groupId>com.nexr</groupId>
         <artifactId>dip-parent</artifactId>
-        <version>0.9-SNAPSHOT</version>
+        <version>1.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <groupId>com.nexr</groupId>
     <artifactId>dip-client</artifactId>
-    <version>0.9-SNAPSHOT</version>
+    <version>1.1-SNAPSHOT</version>
     <description>DataIntegrationPlatform Client</description>
     <name>dip-client</name>
     <packaging>jar</packaging>
@@ -20,7 +20,7 @@
         <dependency>
             <groupId>com.nexr</groupId>
             <artifactId>dip-schema-registry</artifactId>
-            <version>0.9-SNAPSHOT</version>
+            <version>${version}</version>
             <scope>compile</scope>
         </dependency>
 
@@ -247,7 +247,7 @@
                     <description>This is my Documentation on PDF.</description>
                     <destDir>pdf</destDir>
                     <doclet>com.tarsec.javadoc.pdfdoclet.PDFDoclet</doclet>
-                    <docletPath>${basedir}/../build_plugin/pdfdoclet-1.0.3-all.jar</docletPath>
+                    <docletPath>${basedir}/../build_plugin/pdfdoclet-1.1.3-all.jar</docletPath>
                     <!--<docletPath>/Users/seoeun/tools/maven_plugins/pdfdoclet-1.0.3/jar/pdfdoclet-1.0.3-all.jar</docletPath>-->
                     <useStandardDocletOptions>false</useStandardDocletOptions>
                     <additionalparam>

@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.nexr</groupId>
         <artifactId>dip-parent</artifactId>
-        <version>0.9-SNAPSHOT</version>
+        <version>1.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -19,7 +19,7 @@
         <dependency>
             <groupId>com.nexr</groupId>
             <artifactId>dip-schema-registry</artifactId>
-            <version>0.9-SNAPSHOT</version>
+            <version>${version}</version>
             <scope>compile</scope>
         </dependency>
 
