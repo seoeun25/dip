@@ -12,30 +12,25 @@ if [ "$SCHEMA_REPO_HOME" == "" ]; then
 fi
 
 LIB=${SCHEMA_REPO_HOME}/lib
-if [ "$LOG_DIR" == "" ]; then
-    LOG_DIR=${SCHEMA_REPO_HOME}/logs
+if [ "$SCHEMA_REPO_LOG_DIR" == "" ]; then
+    SCHEMA_REPO_LOG_DIR=${SCHEMA_REPO_HOME}/logs
 fi
 
-if [ "$LOG_ROOTLOGGER" == "" ]; then
-    LOG_ROOTLOGGER="INFO,console"
+if [ "$SCHEMA_REPO_CONF_DIR" == "" ]; then
+    SCHEMA_REPO_CONF_DIR=$SCHEMA_REPO_HOME/conf
 fi
 
-if [ "$CONF_DIR" == "" ]; then
-    CONF_DIR=$SCHEMA_REPO_HOME/conf
-fi
-
-SCHEMA_REPO_CONF=$CONF_DIR
 # prepend conf dir to classpath
-if [ -n "$SCHEMA_REPO_CONF" ]; then
-  CLASS_PATH="$SCHEMA_REPO_CONF:$CLASS_PATH"
+if [ -n "$SCHEMA_REPO_CONF_DIR" ]; then
+  CLASS_PATH="$SCHEMA_REPO_CONF_DIR:$CLASS_PATH"
 fi
 
 CLASS_PATH=${CLASS_PATH}:${LIB}/'*'
 
-if [ "$JAVA_OPT" == "" ]; then
-    JAVA_OPT="-Xms2048m -Xmx4096m"
+if [ "$SCHEMA_REPO_JAVA_OPT" == "" ]; then
+    SCHEMA_REPO_JAVA_OPT="-Xms2048m -Xmx4096m"
 fi
 
 JAVA=$JAVA_HOME/bin/java
-exec "$JAVA" ${JAVA_OPT} -cp ${CLASS_PATH} -Dlog.dir=${LOG_DIR} -Dlog.rootLogger=${LOG_ROOTLOGGER} com.nexr.server.DipSchemaRepoServer start
+exec "$JAVA" ${SCHEMA_REPO_JAVA_OPT} -cp ${CLASS_PATH} -Dlog.dir=${SCHEMA_REPO_LOG_DIR} com.nexr.server.DipSchemaRepoServer start
 
