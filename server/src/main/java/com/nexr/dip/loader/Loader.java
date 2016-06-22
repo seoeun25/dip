@@ -359,7 +359,7 @@ public class Loader implements Callable<LoadResult> {
         LOG.info("counts [{}], errorCount [{}]", getName(), etlCounts.getErrorCount());
         LOG.debug("counts [{}], eventCount [{}]", getName(), etlCounts.getEventCount());
 
-        getLoadResult().setCount(totalCount);
+        getLoadResult().setResultCount(totalCount);
         getLoadResult().setErrorCount(etlCounts.getErrorCount());
 
         return etlCounts;

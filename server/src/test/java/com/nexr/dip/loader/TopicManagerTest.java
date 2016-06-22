@@ -5,7 +5,6 @@ import junit.framework.Assert;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.json.simple.JSONObject;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -16,6 +15,9 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Integration Test. Run with other echo systems: oozie, hadoop, hive, kafka.
+ */
 public class TopicManagerTest {
 
     private static ScheduledService scheduledService;
@@ -31,7 +33,7 @@ public class TopicManagerTest {
 
         String name = "employee";
         String appPath = "hdfs://sembp:8020/user/ndap/dip/apps/" + name;
-        loader = new Loader(name, appPath, Loader.SrcType.avro, System.currentTimeMillis(), 1000 * 60 );
+        loader = new Loader(name, appPath, Loader.SrcType.avro, System.currentTimeMillis(), 1000 * 60);
 
     }
 
@@ -56,9 +58,9 @@ public class TopicManagerTest {
     public void testHadoopConf() {
         try {
             Configuration configuration = HDFSClient.getInstance().loadHadoopConf();
-            Iterator<Map.Entry<String,String>> iterator = configuration.iterator();
+            Iterator<Map.Entry<String, String>> iterator = configuration.iterator();
             while (iterator.hasNext()) {
-                Map.Entry<String,String> entry = iterator.next();
+                Map.Entry<String, String> entry = iterator.next();
                 System.out.println(entry.getKey() + " = " + entry.getValue());
             }
         } catch (IOException e) {
@@ -95,7 +97,7 @@ public class TopicManagerTest {
     }
 
     @Test
-    public void testPartition(){
+    public void testPartition() {
         String fileName = "/user/ndap/dip/srcinfos/tb_dhcp/daily/20150923/tb_dhcp.0.0.30333.307.1444," +
                 "/user/ndap/dip/srcinfos/tb_dhcp/daily/20150923/tb_dhcp.1.1.30333.307.1444,";
         loader.addPartitionToHive(fileName);
@@ -129,7 +131,7 @@ public class TopicManagerTest {
                 builder.append(line + "\n");
             }
             StringBuilder command = new StringBuilder();
-            for (String cmd: cmdarray) {
+            for (String cmd : cmdarray) {
                 command.append(cmd + " ");
             }
             System.out.println(command.toString() + "\n  >>>  \n" + builder.toString());
@@ -173,7 +175,7 @@ public class TopicManagerTest {
     @Test
     public void testDeleteOnHDFS() {
         String path = DipContext.getContext().getConfig(DipContext.DIP_NAMENODE) +
-        "/user/seoeun/dip/srcinfos/employee/daily/20151003/employee.0.9.260" + ".41607" + ".1443711600000.avro";
+                "/user/seoeun/dip/srcinfos/employee/daily/20151003/employee.0.9.260" + ".41607" + ".1443711600000.avro";
         try {
             boolean result = HDFSClient.getInstance().delete(new Path(path));
             System.out.println("result : " + result);

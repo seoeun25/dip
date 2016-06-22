@@ -3,9 +3,9 @@ package com.nexr.dip.jpa;
 import com.nexr.dip.DipException;
 import com.nexr.dip.common.Utils;
 import com.nexr.dip.loader.LoadResult;
-import com.nexr.dip.loader.ScheduledService;
-import com.nexr.dip.jpa.JDBCService;
+import junit.framework.Assert;
 import org.apache.oozie.client.WorkflowJob;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -21,9 +21,10 @@ public class DipPropertyQueryExecutorTest {
     @BeforeClass
     public static void setupClass() {
         try {
-            jdbcService = JDBCService.getInstance("dip", "dip-master-mysql");
+            jdbcService = JDBCService.getInstance("dip", "dip-test-hsql");
             jdbcService.start();
 
+            Thread.sleep(1000);
             dipPropertyQueryExecutor = new DipPropertyQueryExecutor(jdbcService);
             loadResultQueryExecutor = new LoadResultQueryExecutor(jdbcService);
         } catch (Exception e) {
@@ -31,50 +32,67 @@ public class DipPropertyQueryExecutorTest {
         }
     }
 
+    @AfterClass
+    public static void tearDown() {
+        jdbcService.shutdown();
+        jdbcService = null;
+    }
+
+
     @Test
     public void testInsertDipProperty() {
 
-        //dip.schemaregistry.url=http://localhost:18181/repo
-        //dip.load.task.count=10
-
         try {
+            String key1 = "dip.schemaregistry.url";
             DipProperty dipProperty = new DipProperty();
-            dipProperty.setName("dip.schemaregistry.url");
+            dipProperty.setName(key1);
             dipProperty.setValue("http://hello.host.com:18181/repo");
             dipPropertyQueryExecutor.insert(dipProperty);
 
+            String key2 = "dip.load.task.count";
             dipProperty = new DipProperty();
-            dipProperty.setName("dip.load.task.count");
+            dipProperty.setName(key2);
             dipProperty.setValue("15");
             dipPropertyQueryExecutor.insert(dipProperty);
 
+            DipProperty dipProperty1 = dipPropertyQueryExecutor.get(DipPropertyQueryExecutor.DipPropertyQuery
+                    .GET_DIPPROPERTY_BY_NAME, new Object[]{key1});
+
+            DipProperty dipProperty2 = dipPropertyQueryExecutor.get(DipPropertyQueryExecutor.DipPropertyQuery
+                    .GET_DIPPROPERTY_BY_NAME, new Object[]{key2});
+
+            Assert.assertEquals(key1, dipProperty1.getName());
+            Assert.assertEquals("http://hello.host.com:18181/repo", dipProperty1.getValue());
+
+            Assert.assertEquals(key2, dipProperty2.getName());
+            Assert.assertEquals("15", dipProperty2.getValue());
+
         } catch (Exception e) {
             e.printStackTrace();
+            Assert.fail();
         }
-
     }
 
     @Test
     public void testGetListDipProperty() {
         try {
+            String key1 = "dip.hiveserver.user";
+            DipProperty dipProperty1 = new DipProperty();
+            dipProperty1.setName(key1);
+            dipProperty1.setValue("sdip-user");
+            dipPropertyQueryExecutor.insert(dipProperty1);
+
             List<DipProperty> list = dipPropertyQueryExecutor.getList(DipPropertyQueryExecutor.DipPropertyQuery
                     .GET_DIPPROPERTY_ALL, new Object[]{});
             for (DipProperty dipProperty : list) {
                 System.out.println(dipProperty.getName() + "=" + dipProperty.getValue());
+                if (dipProperty.getName().equals("dip.hiveserver.user")) {
+                    Assert.assertEquals("sdip-user", dipProperty.getValue());
+                }
             }
         } catch (DipException e) {
             e.printStackTrace();
-        }
-    }
-
-    @Test
-    public void testGetDipProperty() {
-        try {
-            DipProperty dipProperty = dipPropertyQueryExecutor.get(DipPropertyQueryExecutor.DipPropertyQuery
-                    .GET_DIPPROPERTY_BY_NAME, new Object[]{"dip.load.task.count"});
-            System.out.println(dipProperty.getName() + "=" + dipProperty.getValue());
-        } catch (DipException e) {
-            e.printStackTrace();
+            Assert.fail();
         }
     }
 
@@ -90,7 +108,7 @@ public class DipPropertyQueryExecutorTest {
             loadResult.setExternalId("job_1444180809999_0108");
             loadResult.setEtlExecutionPath("/2015-10-07-11-02-34");
             loadResult.setCountFile("/user/seoeun/dip/result/2015-10-07-11-02-34");
-            loadResult.setCount(45678);
+            loadResult.setResultCount(45678);
             loadResult.setErrorCount(0);
             loadResult.setResultFiles("/user/seoeun/dip/srcinfos/employee/daily/20151006/employee.0.7.381270.412742.1444057200000.avro,/user/seoeun/dip/srcinfos/employee/daily/20151006/employee.0.4.30013.35031.1444057200000.avro,/user/seoeun/dip/srcinfos/employee/daily/20151007/employee.0.9.10.791685.1444143600000.avro,");
             loadResult.setEndTime(new Timestamp(Utils.parseTime("2015-11-12 13:10:11", "yyyy-MM-dd HH:mm:ss")));
@@ -103,116 +121,52 @@ public class DipPropertyQueryExecutorTest {
             loadResult.setExternalId(null);
             loadResult.setEtlExecutionPath(null);
             loadResult.setCountFile(null);
-            loadResult.setCount(0);
+            loadResult.setResultCount(0);
             loadResult.setErrorCount(-1);
             loadResult.setError("E0504: App directory [hdfs://sembp:8020/user/ndap/dip/apps/hello] does not exist");
             loadResult.setResultFiles(null);
             loadResultQueryExecutor.insert(loadResult);
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-    }
-
-    @Test
-    public void testInsertAndGetLoadResult() {
-
-        try {
+            // truncate nanotime on executionTime
             long time = System.currentTimeMillis();
-            System.out.println("time : " + time);
             Timestamp timestamp = new Timestamp(time);
-            System.out.println("timestamp : " + timestamp.getTime());
-            System.out.println("timestamp nano : " + timestamp.getNanos());
             timestamp.setNanos(0);
-            System.out.println("timestamp 2 : " + timestamp.getTime());
-            System.out.println("timestamp nano2 : " + timestamp.getNanos());
 
+            LoadResult loadResult1 = new LoadResult("employee", null, new Timestamp(timestamp.getTime()));
+            loadResultQueryExecutor.insert(loadResult1);
+            Assert.assertEquals(timestamp.getTime(), loadResultQueryExecutor.get(LoadResultQueryExecutor.LoadResultQuery.GET_LOADRESULT,
+                    new Object[]{"employee", new Timestamp(timestamp.getTime())}).getExecutionTime().getTime());
 
-            LoadResult loadResult = new LoadResult("employee", null, new Timestamp(timestamp.getTime()));
-            loadResultQueryExecutor.insert(loadResult);
-
-            System.out.println(time + " ==== " + Utils.getDateString(time));
-
-            Thread.sleep(3000);
-
-            LoadResult loadResult1 = loadResultQueryExecutor.get(LoadResultQueryExecutor.LoadResultQuery.GET_LOADRESULT,
-                    new Object[]{loadResult.getName(), new Timestamp(timestamp.getTime())});
-            System.out.println("---- loadResult 1 : " + loadResult1);
-
+            // Update LoadResult
             LoadResult loadResult2 = loadResultQueryExecutor.get(LoadResultQueryExecutor.LoadResultQuery.GET_LOADRESULT,
-                    new Object[]{loadResult.getName(), loadResult.getExecutionTime()});
+                    new Object[]{"employee", timestamp});
+            System.out.println(loadResult);
 
-            System.out.println("---- loadResult 2 : " + loadResult1);
+            loadResult2.setStatusStr(LoadResult.STATUS.RETRY.toString());
+            loadResult2.setEndTime(new Timestamp(Utils.parseTime("2015-11-10 15:21:10", "yyyy-MM-dd HH:mm:ss")));
 
+            loadResultQueryExecutor.executeUpdate(LoadResultQueryExecutor.LoadResultQuery.UPDATE_LOADRESULT, loadResult2);
+
+            loadResult2 = loadResultQueryExecutor.get(LoadResultQueryExecutor.LoadResultQuery.GET_LOADRESULT,
+                    new Object[]{"employee", timestamp});
+            System.out.println(loadResult2);
+            Assert.assertEquals(LoadResult.STATUS.RETRY.toString(), loadResult2.getStatusStr());
+
+            // list by topic
+            List<LoadResult> list = loadResultQueryExecutor.getList(LoadResultQueryExecutor.LoadResultQuery
+                    .GET_LOADRESULT_BY_TOPIC, new Object[]{"employee", 100});
+            Assert.assertEquals(2, list.size());
+
+            // list by time from
+            list = loadResultQueryExecutor.getList(LoadResultQueryExecutor.LoadResultQuery
+                    .GET_LOADRESULT_FROM_TIME, new Object[]{new Timestamp(Utils.parseTime("2015-11-13 00:00:00,000")), 100});
+            Assert.assertEquals(2, list.size());
 
         } catch (Exception e) {
             e.printStackTrace();
+            Assert.fail();
         }
 
     }
-
-    @Test
-    public void testGetLoadResult() throws Exception{
-        try {
-            String name = "employee";
-            String timeStr = "2015-10-08 15:21:11";
-            long time = Utils.parseTime(timeStr, "yyyy-MM-dd HH:mm:ss");
-            System.out.println("time : " + time );  //1444285270627
-            Timestamp executionTime = new Timestamp(time);
-            LoadResult loadResult = loadResultQueryExecutor.get(LoadResultQueryExecutor.LoadResultQuery.GET_LOADRESULT,
-                    new Object[]{name, executionTime});
-            System.out.println(loadResult);
-
-            loadResult.setStatusStr(LoadResult.STATUS.RETRY.toString());
-            loadResult.setEndTime(new Timestamp(Utils.parseTime("2015-11-10 15:21:10", "yyyy-MM-dd HH:mm:ss")));
-
-            loadResultQueryExecutor.executeUpdate(LoadResultQueryExecutor.LoadResultQuery.UPDATE_LOADRESULT, loadResult);
-
-            loadResult = loadResultQueryExecutor.get(LoadResultQueryExecutor.LoadResultQuery.GET_LOADRESULT,
-                    new Object[]{name, executionTime});
-            System.out.println(loadResult);
-        } catch (DipException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Test
-    public void testGetListLoadResultByTopic() {
-        try {
-            int limit = 100;
-            List<LoadResult> list = loadResultQueryExecutor.getList(LoadResultQueryExecutor.LoadResultQuery
-                    .GET_LOADRESULT_BY_TOPIC, new Object[]{"employee", limit});
-            for (LoadResult loadResult : list) {
-                System.out.println(loadResult.toString());
-            }
-
-            limit = 100;
-            list = loadResultQueryExecutor.getList(LoadResultQueryExecutor.LoadResultQuery
-                    .GET_LOADRESULT_BY_TOPIC, new Object[]{"hello", limit});
-            for (LoadResult loadResult : list) {
-                System.out.println(loadResult.toString());
-            }
-        } catch (DipException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Test
-    public void testGetListLoadResultFromTime() throws Exception{
-        try {
-            int limit = 10;
-            List<LoadResult> list = loadResultQueryExecutor.getList(LoadResultQueryExecutor.LoadResultQuery
-                    .GET_LOADRESULT_FROM_TIME, new Object[]{new Timestamp(Utils.parseTime("2015-10-07 " +
-                    "14:00:00,000")), limit});
-            for (LoadResult loadResult : list) {
-                System.out.println(loadResult.toString());
-            }
-
-        } catch (DipException e) {
-            e.printStackTrace();
-        }
-    }
-
 
 }

@@ -4,6 +4,9 @@ import com.nexr.dip.server.DipContext;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+/**
+ * Integration Test. Run with other echo systems: oozie, hadoop, hive, kafka.
+ */
 public class WorkflowClientTest {
 
     private static WorkflowClient client;

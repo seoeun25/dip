@@ -196,13 +196,6 @@ public class ScheduledService {
 
     @VisibleForTesting
     long getInitialExecutionTime(Calendar current) throws ParseException {
-//        int minute = current.get(Calendar.MINUTE);
-//        int diff = (int) (Math.ceil((double)minute /10) * 10) - minute;
-//        current.add(Calendar.MINUTE, diff);
-//        current.set(Calendar.SECOND, 0);
-//        current.set(Calendar.MILLISECOND, 0);
-//        return current.getTimeInMillis();
-
         current.add(Calendar.MINUTE, 1);
         current.set(Calendar.SECOND, 0);
         return current.getTimeInMillis();

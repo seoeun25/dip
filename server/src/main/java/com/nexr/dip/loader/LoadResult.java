@@ -14,19 +14,19 @@ import java.sql.Timestamp;
 @Entity
 @NamedQueries({
         @NamedQuery(name = "GET_LOADRESULT", query = "select a.name, a.executionTime, a.statusStr, a.jobId, a.wfStatusStr, " +
-                "a.externalId, a.etlExecutionPath, a.countFile, a.count, a.errorCount, a.error, a.resultFiles, a.endTime " +
+                "a.externalId, a.etlExecutionPath, a.countFile, a.resultCount, a.errorCount, a.error, a.resultFiles, a.endTime " +
                 "from LoadResult a " +
                 "where a.name = :name and a.executionTime = :executionTime" ),
         @NamedQuery(name = "GET_LOADRESULT_BY_TOPIC", query = "select a.name, a.executionTime, a.statusStr, a.jobId, a.wfStatusStr, " +
-                "a.externalId, a.etlExecutionPath, a.countFile, a.count, a.errorCount, a.error, a.resultFiles, a.endTime " +
+                "a.externalId, a.etlExecutionPath, a.countFile, a.resultCount, a.errorCount, a.error, a.resultFiles, a.endTime " +
                 "from LoadResult a " +
                 "where a.name = :name order by a.executionTime desc" ),
         @NamedQuery(name = "GET_LOADRESULT_FROM_TIME", query = "select a.name, a.executionTime, a.statusStr, a.jobId, a.wfStatusStr, " +
-                "a.externalId, a.etlExecutionPath, a.countFile, a.count, a.errorCount, a.error, a.resultFiles, a.endTime " +
+                "a.externalId, a.etlExecutionPath, a.countFile, a.resultCount, a.errorCount, a.error, a.resultFiles, a.endTime " +
                 "from LoadResult a " +
                 "where a.executionTime >= :executionTime order by a.executionTime desc, a.name desc"),
         @NamedQuery(name = "UPDATE_LOADRESULT", query = "update LoadResult a set a.statusStr = :statusStr, a.jobId = :jobId, a.wfStatusStr = :wfStatusStr, " +
-                "a.externalId = :externalId, a.etlExecutionPath = :etlExecutionPath, a.countFile = :countFile, a.count = :count, a.errorCount = :errorCount, " +
+                "a.externalId = :externalId, a.etlExecutionPath = :etlExecutionPath, a.countFile = :countFile, a.resultCount = :resultCount, a.errorCount = :errorCount, " +
                 "a.error = :error, a.resultFiles = :resultFiles, a.endTime = :endTime where a.name = :name and a.executionTime = :executionTime")
 })
 @Table(name = "loadresult")
@@ -48,8 +48,8 @@ public class LoadResult {
     private String error;
     @Column(name = "count_file")
     private String countFile;
-    @Column(name = "count", nullable = false)
-    private long count;
+    @Column(name = "result_count", nullable = false)
+    private long resultCount;
     @Column(name = "error_count", nullable = false)
     private long errorCount = -1;
     @Column(name = "result_files", length = 12000)
@@ -136,12 +136,12 @@ public class LoadResult {
         this.countFile = countFile;
     }
 
-    public long getCount() {
-        return count;
+    public long getResultCount() {
+        return resultCount;
     }
 
-    public void setCount(long count) {
-        this.count = count;
+    public void setResultCount(long resultCount) {
+        this.resultCount = resultCount;
     }
 
     public long getErrorCount() {
@@ -209,7 +209,7 @@ public class LoadResult {
         builder.append(", externalId=" + externalId);
         builder.append(", etlExecutionPath=" + etlExecutionPath);
         builder.append(", countFile=" + countFile);
-        builder.append(", count=" + count);
+        builder.append(", resultCount=" + resultCount);
         builder.append(", errorCount=" + errorCount);
         if (error != null) {
             builder.append(",  error=" + error);

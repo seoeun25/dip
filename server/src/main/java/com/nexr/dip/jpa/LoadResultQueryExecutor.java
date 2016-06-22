@@ -57,7 +57,7 @@ public class LoadResultQueryExecutor extends QueryExecutor<LoadResult, LoadResul
                 query.setParameter("externalId", bean.getExternalId());
                 query.setParameter("etlExecutionPath", bean.getEtlExecutionPath());
                 query.setParameter("countFile", bean.getCountFile());
-                query.setParameter("count", bean.getCount());
+                query.setParameter("resultCount", bean.getResultCount());
                 query.setParameter("errorCount", bean.getErrorCount());
                 query.setParameter("error", bean.getError());
                 query.setParameter("resultFiles", bean.getResultFiles());
@@ -126,7 +126,7 @@ public class LoadResultQueryExecutor extends QueryExecutor<LoadResult, LoadResul
                 bean.setExternalId((String) arr[5]);
                 bean.setEtlExecutionPath((String) arr[6]);
                 bean.setCountFile((String) arr[7]);
-                bean.setCount((Long) arr[8]);
+                bean.setResultCount((Long) arr[8]);
                 bean.setErrorCount((Long) arr[9]);
                 bean.setError((String) arr[10]);
                 bean.setResultFiles((String) arr[11]);

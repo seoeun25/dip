@@ -19,7 +19,7 @@ public class ScheduledServiceTest {
         scheduledService = ScheduledService.getInstance();
         try {
             scheduledService.start();
-        }catch (DipLoaderException e) {
+        } catch (DipLoaderException e) {
             e.printStackTrace();
         }
     }
@@ -35,14 +35,14 @@ public class ScheduledServiceTest {
             Calendar calendar = Calendar.getInstance();
             calendar.setTimeInMillis(time);
             long bTime = scheduledService.getInitialExecutionTime(calendar);
-            Assert.assertEquals("2015-09-01 11:00:00", Utils.getDateString(bTime));
+            Assert.assertEquals("2015-09-01 10:57:00", Utils.getDateString(bTime));
 
             time = Utils.parseTime("2015-09-01 11:05:01,000");
             calendar = Calendar.getInstance();
             calendar.setTimeInMillis(time);
             bTime = scheduledService.getInitialExecutionTime(calendar);
-            Assert.assertEquals("2015-09-01 11:10:00", Utils.getDateString(bTime));
-        }catch (Exception e ){
+            Assert.assertEquals("2015-09-01 11:06:00", Utils.getDateString(bTime));
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
