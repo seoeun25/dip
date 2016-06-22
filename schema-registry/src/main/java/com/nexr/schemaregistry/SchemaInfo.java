@@ -1,5 +1,7 @@
 package com.nexr.schemaregistry;
 
+import com.google.common.annotations.VisibleForTesting;
+import org.apache.avro.Schema;
 import org.json.simple.JSONObject;
 
 import javax.persistence.Column;
@@ -39,7 +41,7 @@ public class SchemaInfo {
     private String name;
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id" )
     private long id;
 
@@ -116,5 +118,12 @@ public class SchemaInfo {
         Object[] params = new java.lang.Object[]{getName(), getId(), getSchemaStr(), getCreated().getTimeInMillis()};
         return params;
     }
+
+    @VisibleForTesting
+    public boolean eqaulsSchema(Schema schema) {
+        Schema schema1 = new Schema.Parser().parse(schemaStr);
+        return schema1.equals(schema);
+    }
+
 
 }

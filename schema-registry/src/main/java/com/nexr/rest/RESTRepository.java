@@ -5,6 +5,7 @@ import com.nexr.dip.jpa.JDBCService;
 import com.nexr.jpa.SchemaInfoQueryExceutor;
 import com.nexr.schemaregistry.SchemaInfo;
 import com.nexr.server.DipSchemaRepoServer;
+import org.apache.avro.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -102,7 +103,7 @@ public class RESTRepository {
     @POST
     @Path("subjects/{subject}")
     public Response registerSchema(@PathParam("subject") String subject, @FormParam("schema") String schema) {
-        LOG.info(" register : " + subject + "\t " + schema);
+        LOG.debug("registerSchema, subject, [{}], schema [{}]", subject, schema);
         SchemaInfo schemaInfo = null;
         try {
             schemaInfo = queryExecutor.getListMaxResult1(SchemaInfoQueryExceutor.SchemaInfoQuery.GET_BYTOPICLATEST, new Object[]{subject});
@@ -113,13 +114,13 @@ public class RESTRepository {
         }
 
         try {
-            if (schemaInfo == null || !schemaInfo.getSchemaStr().equals(schema)) {
+            if (schemaInfo == null || !schemaInfo.eqaulsSchema( new Schema.Parser().parse(schema))) {
                 schemaInfo = new SchemaInfo(subject, schema);
                 Long obj = (Long)queryExecutor.insertR(schemaInfo);
-                LOG.info("-- new registered id :" + obj + " / " + subject);
+                LOG.debug("new registered id :" + obj + " / " + subject);
                 schemaInfo.setId(obj.longValue());
             } else {
-                LOG.info("already exist : " + schemaInfo.getId() + " / " + subject);
+                LOG.debug("already exist : " + schemaInfo.getId() + " / " + subject);
             }
             return Response.status(200).entity(String.valueOf(schemaInfo.getId())).build();
         } catch (Exception e) {

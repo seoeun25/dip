@@ -42,6 +42,7 @@ public class DipSchemaRepoClient {
             String id = response.getEntity(String.class);
             return id;
         } else {
+            printError(response);
             response.close();
             return null;
         }
@@ -133,6 +134,21 @@ public class DipSchemaRepoClient {
             response.close();
             return null;
         }
+    }
+
+    public void destroy() {
+        if (client != null) {
+            client.destroy();
+        }
+    }
+
+    public void printError(ClientResponse clientResponse) {
+        clientResponse.bufferEntity();
+        String errorMessage = clientResponse.toString();
+        if (clientResponse.hasEntity()) {
+            errorMessage = errorMessage + " " + clientResponse.getEntity(String.class);
+        }
+        System.out.println(errorMessage);
     }
 
 }

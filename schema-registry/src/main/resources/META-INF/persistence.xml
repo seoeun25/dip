@@ -7,7 +7,7 @@
         <properties>
             <property name="openjpa.ConnectionDriverName" value="org.apache.commons.dbcp.BasicDataSource"/>
 
-            <property name="openjpa.ConnectionProperties" value="**INVALID**"/> <!--Set by StoreService at init time -->
+            <property name="openjpa.ConnectionProperties" value="**INVALID**"/> <!--Set by JDBCService at init time -->
 
             <property name="openjpa.DetachState" value="fetch-groups(DetachedStateField=true)"/>
             <property name="openjpa.LockManager" value="pessimistic"/>
@@ -26,20 +26,15 @@
         </properties>
     </persistence-unit>
 
-    <persistence-unit name="repo-master-mysql-init" transaction-type="RESOURCE_LOCAL">
+    <persistence-unit name="repo-test-hsql" transaction-type="RESOURCE_LOCAL">
         <class>com.nexr.schemaregistry.SchemaInfo</class>
 
         <properties>
-            <property name="openjpa.ConnectionUserName" value="root" />
-            <property name="openjpa.ConnectionPassword" value="root" />
-            <property name="openjpa.ConnectionURL" value="jdbc:mysql://localhost/dip"/>
-            <property name="openjpa.ConnectionDriverName" value="com.mysql.jdbc.Driver" />
+            <property name="openjpa.ConnectionDriverName" value="org.apache.commons.dbcp.BasicDataSource"/>
+            <property name="openjpa.ConnectionProperties" value="**INVALID**"/> <!--Set by JDBCService at init time -->
             <property name="openjpa.jdbc.SynchronizeMappings" value="buildSchema" />
-            <property name="openjpa.Log" value="SQL=TRACE" />
+            <property name="openjpa.Log" value="SQL=INFO" />
             <property name="openjpa.ConnectionFactoryProperties" value="printParameters=true" />
-            <property name="openjpa.jdbc.MappingDefaults"
-                      value="ForeignKeyDeleteAction=restrict,
-JoinForeignKeyDeleteAction=restrict" />
         </properties>
     </persistence-unit>
 

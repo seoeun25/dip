@@ -17,8 +17,15 @@ public class AvroSchemaRegistry implements SchemaRegistry<Schema> {
 
     }
 
+    public AvroSchemaRegistry(String url) {
+        Properties properties = new Properties();
+        properties.put(ETL_SCHEMA_REGISTRY_URL, url);
+        init(properties);
+    }
+
     @Override
     public void init(Properties properties) {
+        destroy();
         client = new DipSchemaRepoClient(properties.getProperty(ETL_SCHEMA_REGISTRY_URL));
     }
 
@@ -28,17 +35,17 @@ public class AvroSchemaRegistry implements SchemaRegistry<Schema> {
         return client.register(topicName, schema.toString());
     }
 
+    public String register(String topicName, String schemaStr) {
+        Schema schema = new Schema.Parser().parse(schemaStr);
+        return register(topicName, schema);
+    }
+
     @Override
     public Schema getSchemaByID(String topicName, String id) {
-        SchemaInfo schemaInfo = client.getSchemaBySubject(topicName);
+        SchemaInfo schemaInfo = client.getSchemaBySubjectAndId(topicName, id);
         if (schemaInfo == null) {
-            throw new SchemaNotFoundException("Schema not found for [" + topicName + "]");
-        }
-
-        if (!String.valueOf(schemaInfo.getId()).equals(id)) {
             throw new SchemaNotFoundException("Schema not found for [" + topicName + "], id[" + id + "]");
         }
-
         return Schema.parse(schemaInfo.getSchemaStr());
     }
 
@@ -50,4 +57,12 @@ public class AvroSchemaRegistry implements SchemaRegistry<Schema> {
         }
         return new SchemaDetails<Schema>(topicName, String.valueOf(schemaInfo.getId()), Schema.parse(schemaInfo.getSchemaStr()));
     }
+
+    public void destroy() {
+        if (client != null) {
+            client.destroy();
+            client = null;
+        }
+    }
+
 }

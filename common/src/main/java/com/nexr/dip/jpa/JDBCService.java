@@ -1,5 +1,6 @@
 package com.nexr.dip.jpa;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.nexr.dip.AppService;
 import com.nexr.dip.Context;
 import com.nexr.dip.DipException;
@@ -132,7 +133,16 @@ public class JDBCService implements AppService {
         entityManager.getTransaction().commit();
         entityManager.close();
 
-        getBasicDataSource();
+    }
+
+    @VisibleForTesting
+    public void instrument() {
+        final BasicDataSource dataSource = getBasicDataSource();
+        LOG.info("Active Num {}", dataSource.getNumActive());
+        LOG.info("Idle Num {}", dataSource.getNumIdle());
+        System.out.println("-----Active Num : " + dataSource.getNumActive());
+        System.out.println("-----Idle Num : " + dataSource.getNumIdle());
+
     }
 
     public EntityManager getEntityManager() {
@@ -210,8 +220,20 @@ public class JDBCService implements AppService {
 
     @Override
     public void shutdown() {
+        close();
         if (factory != null && factory.isOpen()) {
             factory.close();
         }
+    }
+
+    private void close() {
+        if (!getBasicDataSource().isClosed()) {
+            try {
+                getBasicDataSource().close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
     }
 }

@@ -1,6 +1,7 @@
 package com.nexr.schemaregistry;
 
 import com.linkedin.camus.schemaregistry.SchemaDetails;
+import com.linkedin.camus.schemaregistry.SchemaNotFoundException;
 import com.nexr.Schemas;
 import com.nexr.server.DipSchemaRepoServer;
 import junit.framework.Assert;
@@ -15,7 +16,7 @@ public class AvroSchemaRegistryTest {
 
     private static AvroSchemaRegistry schemaRegistry;
 
-    private static String id;
+    private static DipSchemaRepoServer server;
 
     @BeforeClass
     public static void setupClass() {
@@ -23,31 +24,27 @@ public class AvroSchemaRegistryTest {
 
         schemaRegistry = new AvroSchemaRegistry();
         Properties properties = new Properties();
-        properties.put("etl.schema.registry.url","http://localhost:18181/schemarepo");
+        properties.put(AvroSchemaRegistry.ETL_SCHEMA_REGISTRY_URL, "http://localhost:2828/repo");
         schemaRegistry.init(properties);
-
-        initData();
     }
 
     @AfterClass
     public static void tearDown() {
         try {
+            schemaRegistry.destroy();
             schemaRegistry = null;
         } catch (Exception e) {
             e.printStackTrace();
         }
         shutdownServer();
     }
-    private static DipSchemaRepoServer server;
+
     private static void startServer() {
         try {
             Thread t1 = new Thread(new Runnable() {
                 @Override
                 public void run() {
-//                    DipSchemaRepoContext.getContext().setConfig("schemarepo." + JDBCService.CONF_URL, "jdbc:derby:memory:myDB;" +
-//                            "create=true");
-//                    DipSchemaRepoContext.getContext().setConfig("schemarepo." + JDBCService.CONF_DRIVER, "org.apache.derby.jdbc" +
-//                            ".EmbeddedDriver");
+                    System.setProperty("persistUnit", "repo-test-hsql");
                     server = DipSchemaRepoServer.getInstance();
                     try {
                         server.start();
@@ -67,49 +64,72 @@ public class AvroSchemaRegistryTest {
 
     private static void shutdownServer() {
         try {
+            server.getJdbcService().instrument();
             server.shutdown();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private static void initData() {
+    @Test
+    public void testRegisterAndGet() {
+        String topic = Schemas.employee;
         try {
-            String topicName = Schemas.gpx_port;
-            Schema schema = new Schema.Parser().parse(Schemas.gpx_port_schema);
-            schemaRegistry.register(topicName, schema);
-            Thread.sleep(2000);
-        }catch (Exception e) {
-            e.printStackTrace();
+            SchemaDetails<Schema> schemaDetails = schemaRegistry.getLatestSchemaByTopic(topic);
+            Assert.fail("schemaDetails should be null but " + schemaDetails.getId());
+        } catch (SchemaNotFoundException e) {
+
+        }
+
+        String id = schemaRegistry.register(topic, Schemas.employee_schema1);
+        System.out.println("id : " + id);
+        Assert.assertTrue(Long.parseLong(id) > 0);
+        String id2 = schemaRegistry.register(topic, Schemas.employee_schema2);
+        // same schema, contains spaces
+        Assert.assertEquals(id, id2);
+
+
+        SchemaInfo schemaInfo = new SchemaInfo(topic, Long.parseLong(id), schemaRegistry.getSchemaByID(topic, id).toString());
+
+        Schema employee3 = new Schema.Parser().parse(Schemas.employee_schema3);
+        Assert.assertFalse(schemaInfo.eqaulsSchema(employee3));
+        String id3 = schemaRegistry.register(topic, Schemas.employee_schema3);
+        System.out.println("id3 : " + id3);
+        Assert.assertNotSame(id3, id);
+
+
+        // different nullable
+        Schema employee4 = new Schema.Parser().parse(Schemas.employee_schema4);
+        Assert.assertFalse(schemaInfo.eqaulsSchema(employee4));
+        String id4 = schemaRegistry.register(topic, Schemas.employee_schema4);
+        System.out.println("id4 : " + id4);
+        Assert.assertNotSame(id3, id4);
+
+        schemaRegistry.getLatestSchemaByTopic(topic);
+
+        //lastSchema
+        Assert.assertEquals(id4, schemaRegistry.getLatestSchemaByTopic(topic).getId());
+
+        // get by topic, id. regardless of latest one
+        Assert.assertNotNull(schemaRegistry.getSchemaByID(topic, id3));
+
+        schemaRegistry.register(Schemas.ftth_if, Schemas.ftth_if_schema);
+
+        //lastSchema again
+        Assert.assertEquals(id4, schemaRegistry.getLatestSchemaByTopic(topic).getId());
+
+    }
+
+    @Test
+    public void testGetByTopicNegative() {
+
+        try {
+            SchemaDetails schemaInfo1 = schemaRegistry.getLatestSchemaByTopic("not-exist");
+            Assert.fail("schemaInfo should be null");
+        } catch (SchemaNotFoundException e) {
+            //e.printStackTrace();
         }
     }
 
-
-    @Test
-    public void testRegister() {
-
-        String topicName = Schemas.gpx_port;
-        Schema schema = new Schema.Parser().parse(Schemas.gpx_port_schema);
-        id = schemaRegistry.register(topicName, schema);
-        System.out.println("id : " + id);
-
-        String id2 = schemaRegistry.register(topicName, schema);
-        Assert.assertEquals(id, id2);
-    }
-
-    @Test
-    public void testGet() {
-        SchemaDetails<Schema> schemaDetails = schemaRegistry.getLatestSchemaByTopic(Schemas.gpx_port);
-        Schema schema = schemaDetails.getSchema();
-        String schmeaStr = schema.toString();
-
-        Schema schema2 = schemaRegistry.getSchemaByID(Schemas.gpx_port, id);
-        Assert.assertEquals(schema, schema2);
-
-
-        schemaRegistry.register(Schemas.ftth_if, new Schema.Parser().parse(Schemas.ftth_if_schema));
-        String schemaStr = schemaRegistry.getLatestSchemaByTopic(Schemas.ftth_if).getSchema().toString();
-        System.out.println("--- \n" + schemaStr);
-    }
 
 }

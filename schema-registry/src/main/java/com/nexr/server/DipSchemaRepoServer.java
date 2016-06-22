@@ -1,5 +1,6 @@
 package com.nexr.server;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.nexr.dip.AppService;
 import com.nexr.dip.DipException;
 import com.nexr.dip.jpa.JDBCService;
@@ -29,7 +30,6 @@ public class DipSchemaRepoServer implements AppService {
     public static DipSchemaRepoServer getInstance() {
         if (schemaRepoServer == null) {
             schemaRepoServer = new DipSchemaRepoServer();
-            schemaRepoServer.init();
         }
         return schemaRepoServer;
     }
@@ -54,9 +54,16 @@ public class DipSchemaRepoServer implements AppService {
     private void init() {
         try {
             initContext();
-            initServices();
+            initJDBCService();
         } catch (DipException e) {
             LOG.error("Fail to init services ", e);
+        }
+    }
+
+    public void shutdownServices() {
+        if (jdbcService != null) {
+            jdbcService.shutdown();
+            jdbcService = null;
         }
     }
 
@@ -65,8 +72,14 @@ public class DipSchemaRepoServer implements AppService {
         PORT = sPort == null ? DEFAULT_PORT : Integer.parseInt(sPort);
     }
 
-    private void initServices() throws DipException {
-        jdbcService = JDBCService.getInstance("schemarepo", "repo-master-mysql");
+    @VisibleForTesting
+    public void initJDBCService() throws DipException {
+        String persistUnit = System.getProperty("persistUnit") == null ? "repo-master-mysql" : System.getProperty("persistUnit");
+        if (jdbcService != null) {
+            jdbcService.shutdown();
+            jdbcService = null;
+        }
+        jdbcService = JDBCService.getInstance("schemarepo", persistUnit);
         jdbcService.start();
     }
 
@@ -104,6 +117,7 @@ public class DipSchemaRepoServer implements AppService {
 
     public void shutdown() throws DipException {
 
+        shutdownServices();
         try {
             jettyServer.stop();
             jettyServer.join();
