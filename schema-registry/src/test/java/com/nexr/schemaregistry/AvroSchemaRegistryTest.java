@@ -1,5 +1,7 @@
 package com.nexr.schemaregistry;
 
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import com.linkedin.camus.schemaregistry.SchemaDetails;
 import com.linkedin.camus.schemaregistry.SchemaNotFoundException;
 import com.nexr.Schemas;
@@ -20,6 +22,7 @@ public class AvroSchemaRegistryTest {
 
     @BeforeClass
     public static void setupClass() {
+        System.setProperty("persistenceUnit", "repo-test-hsql");
         startServer();
 
         schemaRegistry = new AvroSchemaRegistry();
@@ -44,11 +47,12 @@ public class AvroSchemaRegistryTest {
             Thread t1 = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    System.setProperty("persistUnit", "repo-test-hsql");
-                    server = DipSchemaRepoServer.getInstance();
+                    Injector injector = Guice.createInjector(new DipSchemaRepoServer());
+                    server = injector.getInstance(DipSchemaRepoServer.class);
                     try {
                         server.start();
                     } catch (Exception e) {
+                        System.out.println("----------  exception during server start ----------");
                         e.printStackTrace();
                     }
 
@@ -69,6 +73,13 @@ public class AvroSchemaRegistryTest {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    @Test
+    public void test() {
+        System.out.println("hello");
+
+
     }
 
     @Test

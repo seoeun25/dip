@@ -1,10 +1,13 @@
-package com.nexr.server;
+package com.nexr.jpa;
 
-import com.nexr.dip.DipException;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import com.nexr.Schemas;
+import com.nexr.dip.DipException;
 import com.nexr.dip.jpa.JDBCService;
 import com.nexr.jpa.SchemaInfoQueryExceutor;
 import com.nexr.schemaregistry.SchemaInfo;
+import com.nexr.server.DipSchemaRepoServer;
 import junit.framework.Assert;
 import org.apache.avro.Schema;
 import org.junit.AfterClass;
@@ -13,7 +16,7 @@ import org.junit.Test;
 
 import java.util.List;
 
-public class JDBCServiceTest {
+public class SchemaInfoQueryExecutorTest {
 
     private static JDBCService jdbcService;
     private static SchemaInfoQueryExceutor queryExecutor;
@@ -21,10 +24,13 @@ public class JDBCServiceTest {
     @BeforeClass
     public static void setupClass() {
         try {
-            jdbcService = JDBCService.getInstance("schemarepo", "repo-test-hsql");
-            jdbcService.start();
+            System.setProperty("persistenceUnit", "repo-test-hsql");
+            Injector injector = Guice.createInjector(new DipSchemaRepoServer());
+            DipSchemaRepoServer app = injector.getInstance(DipSchemaRepoServer.class);
+            jdbcService = injector.getInstance(JDBCService.class);
+
             Thread.sleep(1000);
-            queryExecutor = new SchemaInfoQueryExceutor(jdbcService);
+            queryExecutor = injector.getInstance(SchemaInfoQueryExceutor.class);
         } catch (Exception e) {
             e.printStackTrace();
         }

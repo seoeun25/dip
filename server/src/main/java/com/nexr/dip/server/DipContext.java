@@ -42,8 +42,7 @@ public class DipContext {
     private final String DEFAULT_CONFIG = "dip-default.conf";
 
     private DipContext() {
-        context = new Context();
-        context.initConfig(SITE_CONFIG, DEFAULT_CONFIG);
+        context = new Context(SITE_CONFIG, DEFAULT_CONFIG);
     }
 
     public static DipContext getContext() {

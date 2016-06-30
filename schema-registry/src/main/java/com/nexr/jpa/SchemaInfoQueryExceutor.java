@@ -15,6 +15,10 @@ import java.util.List;
 
 public class SchemaInfoQueryExceutor extends QueryExecutor<SchemaInfo, SchemaInfoQueryExceutor.SchemaInfoQuery> {
 
+    public SchemaInfoQueryExceutor() {
+        super();
+    }
+
     public SchemaInfoQueryExceutor(JDBCService jdbcService) {
         super(jdbcService);
     }
@@ -95,7 +99,7 @@ public class SchemaInfoQueryExceutor extends QueryExecutor<SchemaInfo, SchemaInf
         return list.size() == 1 ? list.get(0) : null;
     }
 
-    public List<?> executeGetListMaxResult(String namedQueryName, Query query, EntityManager em, int maxResult) throws DipException{
+    public List<?> executeGetListMaxResult(String namedQueryName, Query query, EntityManager em, int maxResult) throws DipException {
 
         List<?> resultList = null;
         try {
@@ -134,12 +138,6 @@ public class SchemaInfoQueryExceutor extends QueryExecutor<SchemaInfo, SchemaInf
         }
 
     }
-
-//    public Object insert(SchemaInfo schemaInfo) throws DipException {
-//        JDBCService jdbcService = DipSchemaRepoServer.getInstance().getJdbcService();
-//        return jdbcService.insert(schemaInfo);
-//        return null;
-//    }
 
     private SchemaInfo constructBean(SchemaInfoQuery namedQuery, Object ret, Object... parameters)
             throws DipException {

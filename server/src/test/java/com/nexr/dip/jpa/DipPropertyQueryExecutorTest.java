@@ -21,8 +21,9 @@ public class DipPropertyQueryExecutorTest {
     @BeforeClass
     public static void setupClass() {
         try {
-            jdbcService = JDBCService.getInstance("dip", "dip-test-hsql");
-            jdbcService.start();
+            //FIXME
+            //jdbcService = JDBCService.getInstance("dip", "dip-test-hsql");
+            //jdbcService.start();
 
             Thread.sleep(1000);
             dipPropertyQueryExecutor = new DipPropertyQueryExecutor(jdbcService);

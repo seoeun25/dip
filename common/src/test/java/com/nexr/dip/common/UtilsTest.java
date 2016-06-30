@@ -19,4 +19,7 @@ public class UtilsTest {
         String sTime = Utils.formatTime(time, "yyyy-MM-dd HH:mm:ss", "UTC");
         System.out.println(sTime);
     }
+
+    public void hi() {
+    }
 }

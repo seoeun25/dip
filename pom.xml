@@ -17,6 +17,7 @@
         <kafka.version>0.9.0.1</kafka.version>
         <openjpa.version>2.2.2</openjpa.version>
         <jersey.version>1.9</jersey.version>
+        <jetty.version>7.4.1.v20110513</jetty.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
@@ -225,13 +226,6 @@
             </dependency>
 
             <dependency>
-                <groupId>org.apache.derby</groupId>
-                <artifactId>derby</artifactId>
-                <version>10.10.1.1</version>
-                <scope>test</scope>
-            </dependency>
-
-            <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>15.0</version>
@@ -241,6 +235,18 @@
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
                 <version>2.4</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.google.inject</groupId>
+                <artifactId>guice</artifactId>
+                <version>4.0</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.google.inject.extensions</groupId>
+                <artifactId>guice-servlet</artifactId>
+                <version>4.0</version>
             </dependency>
 
             <dependency>

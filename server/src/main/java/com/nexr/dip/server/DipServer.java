@@ -91,8 +91,9 @@ public class DipServer implements AppService {
     }
 
     private void initJDBCService() throws DipException {
-        jdbcService = JDBCService.getInstance("dip", "dip-master-mysql");
-        jdbcService.start();
+        // FIXME
+        //jdbcService = JDBCService.getInstance("dip", "dip-master-mysql");
+        //jdbcService.start();
     }
 
     private void initServices() throws DipLoaderException {

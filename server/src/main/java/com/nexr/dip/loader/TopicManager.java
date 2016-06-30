@@ -43,7 +43,8 @@ public class TopicManager {
         interval = DipContext.getContext().getLong("dip.load.schedule." + name + ".interval",
                 defaultScheduleInterval);
 
-        loadResultQueryExecutor = new LoadResultQueryExecutor(JDBCService.getInstance("dip", "dip-master-mysql"));
+        //FIXME
+        //loadResultQueryExecutor = new LoadResultQueryExecutor(JDBCService.getInstance("dip", "dip-master-mysql"));
 
     }
 

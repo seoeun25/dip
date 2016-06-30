@@ -2,8 +2,8 @@ package com.nexr.dip;
 
 public interface AppService {
 
-    public void start() throws DipException;
+    void start() throws DipException;
 
-    public void shutdown() throws DipException;
+    void shutdown() throws DipException;
 
 }

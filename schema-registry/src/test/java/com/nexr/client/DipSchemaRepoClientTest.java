@@ -1,5 +1,7 @@
 package com.nexr.client;
 
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import com.nexr.Schemas;
 import com.nexr.schemaregistry.SchemaInfo;
 import com.nexr.server.DipSchemaRepoServer;
@@ -18,6 +20,7 @@ public class DipSchemaRepoClientTest {
 
     @BeforeClass
     public static void setupClass() {
+        System.setProperty("persistenceUnit", "repo-test-hsql");
         startServer();
         client = new DipSchemaRepoClient("http://localhost:2828/repo");
     }
@@ -26,7 +29,6 @@ public class DipSchemaRepoClientTest {
     public static void tearDown() {
         client.destroy();
         shutdownServer();
-        System.out.println("----- tearDown 11");
     }
 
     private static void startServer() {
@@ -34,8 +36,8 @@ public class DipSchemaRepoClientTest {
             Thread t1 = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    System.setProperty("persistUnit", "repo-test-hsql");
-                    server = DipSchemaRepoServer.getInstance();
+                    Injector injector = Guice.createInjector(new DipSchemaRepoServer());
+                    server = injector.getInstance(DipSchemaRepoServer.class);
                     try {
                         server.start();
                     } catch (Exception e) {

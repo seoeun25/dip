@@ -1,44 +1,49 @@
 package com.nexr.server;
 
-import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
+import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
+import com.google.inject.Singleton;
+import com.google.inject.name.Names;
 import com.nexr.dip.AppService;
+import com.nexr.dip.Context;
 import com.nexr.dip.DipException;
 import com.nexr.dip.jpa.JDBCService;
-import com.sun.jersey.spi.container.servlet.ServletContainer;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.handler.ContextHandlerCollection;
-import org.mortbay.jetty.servlet.Context;
-import org.mortbay.jetty.servlet.ServletHolder;
+import com.nexr.jpa.SchemaInfoQueryExceutor;
+import com.nexr.module.JettyWebServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-public class DipSchemaRepoServer implements AppService {
+public class DipSchemaRepoServer extends AbstractModule implements AppService {
 
-    public static int DEFAULT_PORT = 18181;
     private static Logger LOG = LoggerFactory.getLogger(DipSchemaRepoServer.class);
-    private static DipSchemaRepoServer schemaRepoServer;
-    public int PORT = DEFAULT_PORT;
-    private Server jettyServer;
 
+    @Inject
+    private com.nexr.dip.Context context;
+
+    @Inject
     private JDBCService jdbcService;
 
-    private DipSchemaRepoServer() {
+    @Inject
+    private JettyWebServer jettyWebServer;
 
-    }
 
-    public static DipSchemaRepoServer getInstance() {
-        if (schemaRepoServer == null) {
-            schemaRepoServer = new DipSchemaRepoServer();
-        }
-        return schemaRepoServer;
+    public DipSchemaRepoServer() {
+
     }
 
     public static void main(String[] args) {
         String cmd = args[0];
 
         if ("start".equals(cmd)) {
-            AppService app = DipSchemaRepoServer.getInstance();
+
+            Injector injector = Guice.createInjector(ImmutableList.of(new DipSchemaRepoServer()));
+            DipSchemaRepoServer app = injector.getInstance(DipSchemaRepoServer.class);
+
+            //AppService app = DipSchemaRepoServer.getInstance();
             ShutdownInterceptor shutdownInterceptor = new ShutdownInterceptor(app);
             Runtime.getRuntime().addShutdownHook(shutdownInterceptor);
             try {
@@ -51,13 +56,32 @@ public class DipSchemaRepoServer implements AppService {
         }
     }
 
-    private void init() {
+    @Override
+    protected void configure() {
+        String persistUnit = System.getProperty("persistenceUnit") == null ? "repo-master-mysql" : System.getProperty("persistenceUnit");
+        bindConstant().annotatedWith(Names.named("persistenceUnit")).to(persistUnit);
+        bindConstant().annotatedWith(Names.named("persistenceName")).to("schemarepo");
+        bindConstant().annotatedWith(Names.named("siteConfig")).to("schemarepo.conf");
+        bindConstant().annotatedWith(Names.named("defaultConfig")).to("schemarepo-default.conf");
+        bind(Context.class).in(Singleton.class);
+        bind(JDBCService.class).in(Singleton.class);
+        bind(JettyWebServer.class).in(Singleton.class);
+        bind(SchemaInfoQueryExceutor.class).in(Singleton.class);
+        LOG.info("============= end configure");
+    }
+
+    public void start() throws DipException {
+        LOG.info("========= Schema Repo Starting ......   ========");
+
         try {
-            initContext();
-            initJDBCService();
-        } catch (DipException e) {
-            LOG.error("Fail to init services ", e);
+            jettyWebServer.start();
+            LOG.info("Schema Repo Started !! ");
+            jettyWebServer.join();
+
+        } catch (Exception e) {
+            LOG.error("Error starting SchemaRepoServer. It may not be available.", e);
         }
+
     }
 
     public void shutdownServices() {
@@ -67,60 +91,11 @@ public class DipSchemaRepoServer implements AppService {
         }
     }
 
-    private void initContext() {
-        String sPort = DipSchemaRepoContext.getContext().getConfig("schemarepo.port");
-        PORT = sPort == null ? DEFAULT_PORT : Integer.parseInt(sPort);
-    }
-
-    @VisibleForTesting
-    public void initJDBCService() throws DipException {
-        String persistUnit = System.getProperty("persistUnit") == null ? "repo-master-mysql" : System.getProperty("persistUnit");
-        if (jdbcService != null) {
-            jdbcService.shutdown();
-            jdbcService = null;
-        }
-        jdbcService = JDBCService.getInstance("schemarepo", persistUnit);
-        jdbcService.start();
-    }
-
-    public void start() throws DipException {
-        LOG.info("========= Schema Repo Starting ......   ========");
-
-        init();
-
-        initServer();
-
-        try {
-            jettyServer.start();
-            LOG.info("Schema Repo Started !! ");
-            jettyServer.join();
-        } catch (Exception e) {
-            LOG.error("Error starting Jetty. Schema Repo may not be available.", e);
-        }
-
-    }
-
-    private void initServer() {
-
-        jettyServer = new Server(PORT);
-
-        ContextHandlerCollection contexts = new ContextHandlerCollection();
-        jettyServer.setHandler(contexts);
-
-        Context root = new Context(contexts, "/repo", Context.SESSIONS);
-        ServletHolder jerseyServlet = new ServletHolder(ServletContainer.class);
-        jerseyServlet.setInitOrder(0);
-        jerseyServlet.setInitParameter("com.sun.jersey.config.property.packages", "com.nexr.rest");
-
-        root.addServlet(jerseyServlet, "/*");
-    }
-
     public void shutdown() throws DipException {
 
         shutdownServices();
         try {
-            jettyServer.stop();
-            jettyServer.join();
+            jettyWebServer.shutdown();
         } catch (Exception ex) {
             LOG.error("Error stopping Jetty. Schema Repo may not be available.", ex);
         }

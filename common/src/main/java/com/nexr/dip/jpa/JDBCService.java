@@ -1,7 +1,8 @@
 package com.nexr.dip.jpa;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.nexr.dip.AppService;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.nexr.dip.Context;
 import com.nexr.dip.DipException;
 import org.apache.commons.dbcp.BasicDataSource;
@@ -20,7 +21,7 @@ import java.text.MessageFormat;
 import java.util.List;
 import java.util.Properties;
 
-public class JDBCService implements AppService {
+public class JDBCService {
 
     public static final String CONF_URL = "jdbc.url";
     public static final String CONF_DRIVER = "jdbc.driver";
@@ -38,21 +39,25 @@ public class JDBCService implements AppService {
 
     private static Logger LOG = LoggerFactory.getLogger(JDBCService.class);
     private static JDBCService instance;
+    private final String name;
+    private final Context context;
     private EntityManagerFactory factory;
+    private String persistenceUnit;
 
-    private String name;
-    private String persistentUnit;
-
-    private JDBCService(String name, String persistentUnit) {
+    @Inject
+    public JDBCService(Context context, @Named("persistenceName") String name) {
+        this.context = context;
         this.name = name;
-        this.persistentUnit = persistentUnit;
+        try {
+            start();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    public static JDBCService getInstance(String name, String persistentUnit) {
-        if (instance == null) {
-            instance = new JDBCService(name, persistentUnit);
-        }
-        return instance;
+    @Inject
+    public void setPersistenceUnit(@Named("persistenceUnit") String persistenceUnit) {
+        this.persistenceUnit = persistenceUnit;
     }
 
     private BasicDataSource getBasicDataSource() {
@@ -68,9 +73,7 @@ public class JDBCService implements AppService {
         return basicDataSource;
     }
 
-    public void start() throws DipException {
-        Context context = new Context();
-        context.initConfig(name + ".conf", name + "-default.conf");
+    private void start() throws DipException {
         String dbSchema = context.getConfig(name + "." + CONF_DB_SCHEMA);
         String url = context.getConfig(name + "." + CONF_URL);
         String driver = context.getConfig(name + "." + CONF_DRIVER);
@@ -119,7 +122,7 @@ public class JDBCService implements AppService {
         props.setProperty("openjpa.ConnectionDriverName", dataSource);
 
         //dip-master-mysql
-        factory = Persistence.createEntityManagerFactory(persistentUnit, props);
+        factory = Persistence.createEntityManagerFactory(persistenceUnit, props);
 
         EntityManager entityManager = getEntityManager();
         // TODO No need to find. Persistence.xml
@@ -140,9 +143,6 @@ public class JDBCService implements AppService {
         final BasicDataSource dataSource = getBasicDataSource();
         LOG.info("Active Num {}", dataSource.getNumActive());
         LOG.info("Idle Num {}", dataSource.getNumIdle());
-        System.out.println("-----Active Num : " + dataSource.getNumActive());
-        System.out.println("-----Idle Num : " + dataSource.getNumIdle());
-
     }
 
     public EntityManager getEntityManager() {
@@ -218,7 +218,6 @@ public class JDBCService implements AppService {
         }
     }
 
-    @Override
     public void shutdown() {
         close();
         if (factory != null && factory.isOpen()) {

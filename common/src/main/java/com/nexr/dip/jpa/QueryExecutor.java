@@ -1,5 +1,6 @@
 package com.nexr.dip.jpa;
 
+import com.google.inject.Inject;
 import com.nexr.dip.DipException;
 import com.nexr.dip.jpa.JDBCService;
 import org.slf4j.Logger;
@@ -20,7 +21,17 @@ public abstract class QueryExecutor<T, E extends Enum<E>> {
     private static Logger LOG = LoggerFactory.getLogger(QueryExecutor.class);
 
     protected  JDBCService jdbcService;
+
+    protected QueryExecutor() {
+
+    }
+
     protected QueryExecutor(JDBCService jdbcService) {
+        this.jdbcService = jdbcService;
+    }
+
+    @Inject
+    public void setJdbcService(JDBCService jdbcService) {
         this.jdbcService = jdbcService;
     }
 

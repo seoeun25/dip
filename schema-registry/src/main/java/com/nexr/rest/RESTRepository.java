@@ -1,10 +1,9 @@
 package com.nexr.rest;
 
+import com.google.inject.Inject;
 import com.nexr.dip.DipException;
-import com.nexr.dip.jpa.JDBCService;
 import com.nexr.jpa.SchemaInfoQueryExceutor;
 import com.nexr.schemaregistry.SchemaInfo;
-import com.nexr.server.DipSchemaRepoServer;
 import org.apache.avro.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +17,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
 import java.util.List;
 
-@Path("/")
+@Path("repo")
 public class RESTRepository {
 
     private static Logger LOG = LoggerFactory.getLogger(RESTRepository.class);
@@ -26,9 +25,12 @@ public class RESTRepository {
     private SchemaInfoQueryExceutor queryExecutor;
 
     public RESTRepository() {
-        // TODO : inject
-        JDBCService jdbcService = DipSchemaRepoServer.getInstance().getJdbcService();
-        queryExecutor = new SchemaInfoQueryExceutor(jdbcService);
+
+    }
+
+    @Inject
+    public void setSchemaInfoQueryExceutor(SchemaInfoQueryExceutor queryExecutor) {
+        this.queryExecutor = queryExecutor;
     }
 
     @GET
@@ -114,9 +116,9 @@ public class RESTRepository {
         }
 
         try {
-            if (schemaInfo == null || !schemaInfo.eqaulsSchema( new Schema.Parser().parse(schema))) {
+            if (schemaInfo == null || !schemaInfo.eqaulsSchema(new Schema.Parser().parse(schema))) {
                 schemaInfo = new SchemaInfo(subject, schema);
-                Long obj = (Long)queryExecutor.insertR(schemaInfo);
+                Long obj = (Long) queryExecutor.insertR(schemaInfo);
                 LOG.debug("new registered id :" + obj + " / " + subject);
                 schemaInfo.setId(obj.longValue());
             } else {
