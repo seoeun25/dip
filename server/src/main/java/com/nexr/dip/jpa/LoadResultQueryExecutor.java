@@ -16,10 +16,6 @@ import java.util.List;
  */
 public class LoadResultQueryExecutor extends QueryExecutor<LoadResult, LoadResultQueryExecutor.LoadResultQuery> {
 
-    public LoadResultQueryExecutor(JDBCService jdbcService) {
-        super(jdbcService);
-    }
-
     @Override
     public LoadResult get(LoadResultQuery namedQuery, Object... parameters) throws DipException {
         EntityManager em = jdbcService.getEntityManager();

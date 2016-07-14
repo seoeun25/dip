@@ -38,10 +38,10 @@ public class SimpleKafkaConsumer {
 
     public static void main(String args[]) {
         if (args.length == 0) {
-//            System.out.println("brokerhost, brokerport, topic, parition, offset, maxread");
-//            System.out.println("localhost, 9092, hello, 7, 10, 5");
-//            System.exit(0);
-//            args = new String[]{"localhost", "9092", "employee", "0", "426810", "10"};
+            System.out.println("brokerhost, brokerport, topic, parition, offset, maxread");
+            System.out.println("localhost, 9092, hello, 7, 10, 5");
+            System.exit(0);
+            args = new String[]{"localhost", "9092", "az-test", "1", "426810", "10"};
         }
         List<String> seedBrokers = new ArrayList<String>();
         seedBrokers.add(args[0]);

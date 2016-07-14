@@ -254,7 +254,7 @@ public class DipClient<D> implements Configurable {
                 map.put(ProducerConfig.BLOCK_ON_BUFFER_FULL_CONFIG, "false");
                 map.put(Configurable.SCHEMAREGISTRY_CLASS, "com.nexr.schemaregistry.AvroSchemaRegistry");
                 map.put(KafkaAvroMessageEncoder.KAFKA_MESSAGE_CODER_SCHEMA_REGISTRY_CLASS, "com.nexr.schemaregistry.AvroSchemaRegistry");
-                map.put("partitioner.class", "kafka.producer.ByteArrayPartitioner");
+                //map.put("partitioner.class", "kafka.producer.ByteArrayPartitioner");
                 return map;
             }
         },

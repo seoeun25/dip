@@ -15,14 +15,6 @@ import java.util.List;
 
 public class SchemaInfoQueryExceutor extends QueryExecutor<SchemaInfo, SchemaInfoQueryExceutor.SchemaInfoQuery> {
 
-    public SchemaInfoQueryExceutor() {
-        super();
-    }
-
-    public SchemaInfoQueryExceutor(JDBCService jdbcService) {
-        super(jdbcService);
-    }
-
     public SchemaInfo get(SchemaInfoQuery namedQuery, Object... parameters) throws DipException {
         EntityManager em = jdbcService.getEntityManager();
         Query query = getSelectQuery(namedQuery, em, parameters);

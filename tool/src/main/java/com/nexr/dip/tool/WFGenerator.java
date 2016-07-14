@@ -1,5 +1,12 @@
 package com.nexr.dip.tool;
 
+import com.google.common.collect.ImmutableList;
+import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
+import com.google.inject.Singleton;
+import com.nexr.dip.Context;
 import com.nexr.dip.server.DipContext;
 import org.apache.commons.io.IOUtils;
 
@@ -12,7 +19,7 @@ import java.util.List;
 /**
  * WFGenenerator generates the workflow definition per each topic.
  */
-public class WFGenerator {
+public class WFGenerator extends AbstractModule{
 
     public static final String AVRO_TEMPLATE = "camus/camus-avro.properties";
     public static final String TEXT_TEMPLATE = "camus/camus-text.properties";
@@ -30,7 +37,8 @@ public class WFGenerator {
     public static final String DIP_HIVESERVER = "${dipHiveServer}";
     public static final String DIP_USER_NAME = "${userName}";
 
-    private DipContext dipContext;
+    @Inject
+    private Context context;
 
     private ExecuteType excuteType;
 
@@ -58,9 +66,6 @@ public class WFGenerator {
 
     public WFGenerator(ExecuteType executeType) throws IOException {
         this.excuteType = executeType;
-
-        DipContext context = DipContext.getContext();
-        this.dipContext = context;
 
         avroSrcInfos = context.getConfig(DipContext.AVRO_TOPICS);
         textSrcInfos = context.getConfig(DipContext.TEXT_TOPICS);
@@ -93,7 +98,9 @@ public class WFGenerator {
             if (args.length > 0) {
                 type = ExecuteType.valueOf(args[0]);
             }
-            WFGenerator generator = new WFGenerator(type);
+            Injector injector = Guice.createInjector(ImmutableList.of(new WFGenerator(type)));
+            WFGenerator generator = injector.getInstance(WFGenerator.class);
+
             generator.generate(generator.getAvroSrcInfos(), generator.getTextSrcInfos());
         } catch (IOException e) {
             System.out.println("Fail to load Template : " + e.getMessage());
@@ -200,7 +207,7 @@ public class WFGenerator {
                 line = line.replace(SCHEMA_REGISTRY_VAR, schemaRegistryUrl);
             }
             if (line.contains(TASK_COUNT_VAR)) {
-                String taskCount = dipContext.getConfig("dip.load.task." + srcInfo + ".count");
+                String taskCount = context.getConfig("dip.load.task." + srcInfo + ".count");
                 if (taskCount != null) {
                     line = line.replace(TASK_COUNT_VAR, taskCount);
                 } else {
@@ -235,7 +242,7 @@ public class WFGenerator {
                 line = line.replace(ETL_DESTINATION_DIR, etlDestinationDir );
             }
             if (line.contains(KAFKA_PULL_SIZE_VAR)) {
-                String topicKafkaPullSize = dipContext.getConfig("dip.kafka.max.pull.size." + srcInfo);
+                String topicKafkaPullSize = context.getConfig("dip.kafka.max.pull.size." + srcInfo);
                 if (topicKafkaPullSize != null) {
                     line = line.replace(KAFKA_PULL_SIZE_VAR, topicKafkaPullSize);
                 } else {
@@ -246,6 +253,11 @@ public class WFGenerator {
             writer.write(line + "\n");
 
         }
+    }
+
+    @Override
+    protected void configure() {
+        bind(Context.class).to(DipContext.class).in(Singleton.class);
     }
 
     public static enum ExecuteType {

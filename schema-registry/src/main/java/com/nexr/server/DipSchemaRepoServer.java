@@ -22,7 +22,7 @@ public class DipSchemaRepoServer extends AbstractModule implements AppService {
     private static Logger LOG = LoggerFactory.getLogger(DipSchemaRepoServer.class);
 
     @Inject
-    private com.nexr.dip.Context context;
+    private Context context;
 
     @Inject
     private JDBCService jdbcService;
@@ -43,7 +43,6 @@ public class DipSchemaRepoServer extends AbstractModule implements AppService {
             Injector injector = Guice.createInjector(ImmutableList.of(new DipSchemaRepoServer()));
             DipSchemaRepoServer app = injector.getInstance(DipSchemaRepoServer.class);
 
-            //AppService app = DipSchemaRepoServer.getInstance();
             ShutdownInterceptor shutdownInterceptor = new ShutdownInterceptor(app);
             Runtime.getRuntime().addShutdownHook(shutdownInterceptor);
             try {
@@ -67,7 +66,6 @@ public class DipSchemaRepoServer extends AbstractModule implements AppService {
         bind(JDBCService.class).in(Singleton.class);
         bind(JettyWebServer.class).in(Singleton.class);
         bind(SchemaInfoQueryExceutor.class).in(Singleton.class);
-        LOG.info("============= end configure");
     }
 
     public void start() throws DipException {

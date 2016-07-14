@@ -1,11 +1,14 @@
 package com.nexr.dip.loader;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.inject.Inject;
 import com.linkedin.camus.etl.kafka.common.EtlCounts;
 import com.linkedin.camus.etl.kafka.common.Source;
+import com.nexr.dip.Context;
 import com.nexr.dip.DipLoaderException;
 import com.nexr.dip.common.Utils;
 import com.nexr.dip.server.DipContext;
+import com.sun.org.apache.bcel.internal.generic.DCONST;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -52,8 +55,7 @@ public class Loader implements Callable<LoadResult> {
     public static String IO_ERROR = "java.io.IOException";
     private static Logger LOG = LoggerFactory.getLogger(Loader.class);
     private String name;
-    private String appPath;
-    private SrcType srcType;
+    private TopicManager.TopicDesc topicDesc;
     private LoadResult loadResult;
     private long executionTime;
     private long interval;
@@ -61,14 +63,19 @@ public class Loader implements Callable<LoadResult> {
     private STATUS status = STATUS.PREP;
     private int retryCount;
 
-    public Loader(String name, String appPath, SrcType srcType, long executionTime, long interval) {
-        this(name, appPath, srcType, executionTime, interval, 0);
+    @Inject
+    private Context context;
+
+    @Inject
+    private HDFSClient hdfsClient;
+
+    public Loader(TopicManager.TopicDesc topicDesc, long executionTime, long interval) {
+        this(topicDesc, executionTime, interval, 0);
     }
 
-    public Loader(String name, String appPath, SrcType srcType, long executionTime, long interval, int retryCount) {
-        this.name = name;
-        this.appPath = appPath;
-        this.srcType = srcType;
+    public Loader(TopicManager.TopicDesc topicDesc, long executionTime, long interval, int retryCount) {
+        this.topicDesc = topicDesc;
+        this.name = topicDesc.getName();
         this.interval = interval;
         this.retryCount = retryCount;
         Timestamp timestamp = new Timestamp(executionTime);
@@ -77,20 +84,16 @@ public class Loader implements Callable<LoadResult> {
         this.executionTime = timestamp.getTime();
     }
 
+    public TopicManager.TopicDesc getTopicDesc() {
+        return this.topicDesc;
+    }
+
     public String getName() {
         return name;
     }
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public String getAppPath() {
-        return appPath;
-    }
-
-    public void setAppPath(String appPath) {
-        this.appPath = appPath;
     }
 
     public LoadResult getLoadResult() {
@@ -165,9 +168,12 @@ public class Loader implements Callable<LoadResult> {
         LOG.info("Loader " + status + " [{}], real execute time [{}] ", name,
                 Utils.getDateString(System.currentTimeMillis()));
         try {
-            WorkflowClient client = new WorkflowClient(DipContext.getContext());
+            //FIXME
+            LOG.info("------ context : " + context);
+
+            WorkflowClient client = new WorkflowClient(context);
             Properties properties = new Properties();
-            properties.put(OozieClient.APP_PATH, appPath);
+            properties.put(OozieClient.APP_PATH, topicDesc.getAppPath());
             String jobId = client.run(properties);
             loadResult.setJobId(jobId);
             status = STATUS.WFRUNNING;
@@ -193,12 +199,12 @@ public class Loader implements Callable<LoadResult> {
         } catch (OozieClientException e) {
             loadResult.setError(e.getMessage());
             loadResult.setStatus(LoadResult.STATUS.RETRY);
-            LOG.error("run to [{}] ", DipContext.getContext().getConfig(DipContext.DIP_OOZIE));
+            LOG.error("run to [{}] ", context.getConfig(DipContext.DIP_OOZIE));
             LOG.error("Fail to load, need to retry : " + name, e);
         } catch (Exception e) {
             loadResult.setError(e.getMessage());
             loadResult.setStatus(LoadResult.STATUS.FAILED);
-            LOG.error("run to [{}] ", DipContext.getContext().getConfig(DipContext.DIP_OOZIE));
+            LOG.error("run to [{}] ", context.getConfig(DipContext.DIP_OOZIE));
             LOG.error("Fail to load : " + name, e);
         }
         status = STATUS.END;
@@ -289,13 +295,14 @@ public class Loader implements Callable<LoadResult> {
 
     @VisibleForTesting
     public void cleanupResult() {
+        //FIXME hdfsclient init
         LOG.warn("cleanupResult start");
         boolean removed = true;
         if (getLoadResult().getResultFiles() != null && !getLoadResult().getResultFiles().equals("")) {
             String[] files = getLoadResult().getResultFiles().split(",");
             for (String file : files) {
                 try {
-                    removed = removed && HDFSClient.getInstance().delete(new Path(DipContext.getContext().getConfig
+                    removed = removed && hdfsClient.delete(new Path(context.getConfig
                             (DipContext.DIP_NAMENODE) + file));
                 } catch (Exception e) {
                     LOG.error("Failed to delete result : " + file, e);
@@ -307,12 +314,12 @@ public class Loader implements Callable<LoadResult> {
 
         if (getLoadResult().getEtlExecutionPath() != null) {
             String camusExectutionPath = getLoadResult().getEtlExecutionPath();
-            String hisotryPath = DipContext.getContext().getConfig(DipContext.DIP_ETL_EXECUTION_HISTORY_PATH);
+            String hisotryPath = context.getConfig(DipContext.DIP_ETL_EXECUTION_HISTORY_PATH);
             if (hisotryPath.contains("${topic}")) {
                 hisotryPath = hisotryPath.replace("${topic}", name);
             }
             try {
-                removed = removed && HDFSClient.getInstance().delete(new Path(DipContext.getContext().getConfig(DipContext
+                removed = removed && hdfsClient.delete(new Path(context.getConfig(DipContext
                         .DIP_NAMENODE) + hisotryPath + "/" + camusExectutionPath));
             } catch (Exception e) {
                 LOG.error("Failed to delete camus history : " + hisotryPath + "/" + camusExectutionPath, e);
@@ -326,13 +333,13 @@ public class Loader implements Callable<LoadResult> {
             // TODO : error 발생해도 wf SUCCEEDED. search log?
             throw new FileNotFoundException("EtlCounts file is null. Check etl.keep.count.files configuration.");
         }
-        Path path = new Path(DipContext.getContext().getConfig(DipContext.DIP_NAMENODE) + getLoadResult()
+        Path path = new Path(context.getConfig(DipContext.DIP_NAMENODE) + getLoadResult()
                 .getCountFile());
         LOG.debug("count from : " + path.toString());
         EtlCounts etlCounts = new EtlCounts(name, 10);
 
         String user = System.getProperty("user.name");
-        FileSystem fs = HDFSClient.getInstance().createFileSystem(user, path.toUri());
+        FileSystem fs = hdfsClient.createFileSystem(user, path.toUri());
         if (fs.isDirectory(path)) {
             FileStatus[] gstatuses = fs.listStatus(path, new PrefixFilter("counts"));
             for (FileStatus gfileStatus : gstatuses) {
@@ -569,16 +576,16 @@ public class Loader implements Callable<LoadResult> {
                 if (!oldLocation.equals(location)) {
                     if (!tableName.equals("") && !partition.equals("") && !location.equals("")) {
                         // ALTER TABLE ${topic} ADD PARTITION (ins_date = '${partition}') location '${location}'
-                        String createDML = DipContext.getContext().getConfig(DipContext.DIP_PARTITION_CREATE_DDL);
+                        String createDML = context.getConfig(DipContext.DIP_PARTITION_CREATE_DDL);
                         System.out.println("org : " + createDML);
                         createDML = createDML.replace("${table_name}", tableName);
                         createDML = createDML.replace("${partition}", partition);
                         createDML = createDML.replace("${location}", location);
 
                         String[] cmdarray = {"beeline",
-                                "-u", "jdbc:hive2://" + DipContext.getContext().getConfig(DipContext.DIP_HIVESERVER),
-                                "-n", DipContext.getContext().getConfig(DipContext.DIP_HIVESERVER_USER),
-                                "-p", DipContext.getContext().getConfig(DipContext.DIP_HIVESERVER_PASSWD),
+                                "-u", "jdbc:hive2://" + context.getConfig(DipContext.DIP_HIVESERVER),
+                                "-n", context.getConfig(DipContext.DIP_HIVESERVER_USER),
+                                "-p", context.getConfig(DipContext.DIP_HIVESERVER_PASSWD),
                                 "-e", "\"" + createDML + "\""
                         };
                         Process process = null;
@@ -624,7 +631,7 @@ public class Loader implements Callable<LoadResult> {
         builder.append(Utils.getDateString(executionTime) + ", ");
         builder.append(status + ", ");
         builder.append("externalId=" + loadResult.getExternalId() + ", ");
-        builder.append(appPath + ", ");
+        builder.append(topicDesc.getAppPath() + ", ");
         builder.append(interval);
         return builder.toString();
     }

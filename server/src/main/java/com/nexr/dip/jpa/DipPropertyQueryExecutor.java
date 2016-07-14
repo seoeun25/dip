@@ -14,10 +14,6 @@ import java.util.List;
  */
 public class DipPropertyQueryExecutor extends QueryExecutor<DipProperty, DipPropertyQueryExecutor.DipPropertyQuery> {
 
-    public DipPropertyQueryExecutor(JDBCService jdbcService) {
-        super(jdbcService);
-    }
-
     public DipProperty get(DipPropertyQuery namedQuery, Object... parameters) throws DipException {
         EntityManager em = jdbcService.getEntityManager();
         Query query = getSelectQuery(namedQuery, em, parameters);

@@ -1,17 +1,23 @@
 package com.nexr.dip.server;
 
+import com.google.common.collect.ImmutableList;
+import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
+import com.google.inject.Singleton;
+import com.google.inject.name.Names;
 import com.nexr.dip.AppService;
+import com.nexr.dip.Context;
 import com.nexr.dip.DipException;
-import com.nexr.dip.DipLoaderException;
 import com.nexr.dip.jpa.DipProperty;
 import com.nexr.dip.jpa.DipPropertyQueryExecutor;
 import com.nexr.dip.jpa.JDBCService;
+import com.nexr.dip.jpa.LoadResultQueryExecutor;
+import com.nexr.dip.loader.HDFSClient;
 import com.nexr.dip.loader.ScheduledService;
-import com.sun.jersey.spi.container.servlet.ServletContainer;
-import org.mortbay.jetty.Server;
-import org.mortbay.jetty.handler.ContextHandlerCollection;
-import org.mortbay.jetty.servlet.Context;
-import org.mortbay.jetty.servlet.ServletHolder;
+import com.nexr.dip.loader.TopicManager;
+import com.nexr.dip.module.DipWebServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,36 +29,41 @@ import java.util.Properties;
  * DipServer is the web based server. DipServer load the messages from the kafka cluster to HDFS periodically and connect the
  * result data files to the Hive.
  */
-public class DipServer implements AppService {
+public class DipServer extends AbstractModule implements AppService {
 
-    public static int DEFAULT_PORT = 17171;
     private static Logger LOG = LoggerFactory.getLogger(DipServer.class);
     private static DipServer dipServer;
-    public int PORT = DEFAULT_PORT;
-    private Server jettyServer;
 
-    private DipContext dipContext;
-    private JDBCService jdbcService;
+    @Inject
     private ScheduledService scheduledService;
 
-    private DipServer() {
+    @Inject
+    private Context context;
 
-    }
+    @Inject
+    private JDBCService jdbcService;
 
-    public static DipServer getInstance() {
-        if (dipServer == null) {
-            dipServer = new DipServer();
-        }
-        return dipServer;
+    @Inject
+    private DipPropertyQueryExecutor dipPropertyQueryExecutor;
+
+    @Inject
+    private DipWebServer jettyWebServer;
+
+    public DipServer() {
+
     }
 
     public static void main(String[] args) {
         String cmd = args[0];
 
         if ("start".equals(cmd)) {
-            AppService app = DipServer.getInstance();
+            Injector injector = Guice.createInjector(ImmutableList.of(new DipServer()));
+            DipServer app = injector.getInstance(DipServer.class);
+
             ShutdownInterceptor shutdownInterceptor = new ShutdownInterceptor(app);
             Runtime.getRuntime().addShutdownHook(shutdownInterceptor);
+
+
             try {
                 app.start();
             } catch (DipException e) {
@@ -63,56 +74,55 @@ public class DipServer implements AppService {
         }
     }
 
+    @Override
+    protected void configure() {
+        String persistUnit = System.getProperty("persistenceUnit") == null ? "dip-master-mysql" : System.getProperty("persistenceUnit");
+        bindConstant().annotatedWith(Names.named("persistenceUnit")).to(persistUnit);
+        bindConstant().annotatedWith(Names.named("persistenceName")).to("dip");
+        bindConstant().annotatedWith(Names.named("siteConfig")).to("dip.conf");
+        bindConstant().annotatedWith(Names.named("defaultConfig")).to("dip-default.conf");
+        bind(Context.class).in(Singleton.class);
+        bind(JDBCService.class).in(Singleton.class);
+        bind(ScheduledService.class).in(Singleton.class);
+        bind(DipWebServer.class).in(Singleton.class);
+        bind(DipPropertyQueryExecutor.class).in(Singleton.class);
+        bind(LoadResultQueryExecutor.class).in(Singleton.class);
+        bind(HDFSClient.class).in(Singleton.class);
+
+    }
+
     private void init() {
         try {
-            initContext();
-            initJDBCService();
             initConfigFromDB();
 
-            Properties properties = DipContext.getContext().getProperties();
+            Properties properties = context.getProperties();
             for (String key : properties.stringPropertyNames()) {
-                LOG.info("[Configs ] " + key + " = " + properties.getProperty(key));
+                LOG.debug("[Configs ] " + key + " = " + properties.getProperty(key));
             }
 
-            initServices();
-
             Thread.sleep(1000);
-            scheduledService.debugLoaderStatus();
+            scheduledService.start();
+            //scheduledService.debugLoaderStatus();
+
 
         } catch (Exception e) {
             LOG.error("Fail to init services ", e);
         }
     }
 
-    private void initContext() {
-        dipContext = DipContext.getContext();
-        String sPort = dipContext.getConfig("dip.port");
-        PORT = sPort == null ? DEFAULT_PORT : Integer.parseInt(sPort);
-    }
-
-    private void initJDBCService() throws DipException {
-        // FIXME
-        //jdbcService = JDBCService.getInstance("dip", "dip-master-mysql");
-        //jdbcService.start();
-    }
-
-    private void initServices() throws DipLoaderException {
-        scheduledService = ScheduledService.getInstance();
-        scheduledService.start();
-    }
 
     private void initConfigFromDB() {
-        Properties properties = getJDBCTopicProperties(jdbcService);
+        Properties properties = getPersistTopicProperties();
         for (String name : properties.stringPropertyNames()) {
-            DipContext.getContext().setConfig(name, properties.getProperty(name));
+            context.setConfig(name, properties.getProperty(name));
         }
     }
 
-    public Properties getJDBCTopicProperties(JDBCService jdbcService) {
+    public Properties getPersistTopicProperties() {
         Properties properties = new Properties();
-        DipPropertyQueryExecutor dipPropsQueryExecutor = new DipPropertyQueryExecutor(jdbcService);
         try {
-            List<DipProperty> dipPropertyList = dipPropsQueryExecutor.getList(DipPropertyQueryExecutor.DipPropertyQuery.GET_DIPPROPERTY_ALL, new Object[]{});
+            List<DipProperty> dipPropertyList = dipPropertyQueryExecutor.getList(DipPropertyQueryExecutor.DipPropertyQuery.GET_DIPPROPERTY_ALL, new
+                    Object[]{});
             for (DipProperty dipProperty : dipPropertyList) {
                 properties.put(dipProperty.getName(), dipProperty.getValue());
             }
@@ -127,42 +137,22 @@ public class DipServer implements AppService {
 
         init();
 
-        initServer();
-
         try {
-            jettyServer.start();
+            jettyWebServer.start();
             LOG.info("DipServer Started !! ");
-            jettyServer.join();
+            jettyWebServer.join();
         } catch (Exception e) {
             LOG.error("Error starting Jetty. DipServer may not be available.", e);
         }
 
     }
 
-    private void initServer() {
-
-        jettyServer = new Server(PORT);
-
-        ContextHandlerCollection contexts = new ContextHandlerCollection();
-        jettyServer.setHandler(contexts);
-
-        Context root = new Context(contexts, "/dip", Context.SESSIONS);
-        ServletHolder jerseyServlet = new ServletHolder(ServletContainer.class);
-        jerseyServlet.setInitOrder(0);
-        jerseyServlet.setInitParameter("com.sun.jersey.config.property.packages", "com.nexr.dip.rest");
-
-        root.addServlet(jerseyServlet, "/*");
-        root.setAttribute("scheduledService", scheduledService);
-    }
-
     public void shutdown() throws DipException {
 
         try {
-
             shutdownService();
 
-            jettyServer.stop();
-            jettyServer.join();
+            jettyWebServer.shutdown();
         } catch (Exception ex) {
             LOG.error("Error stopping Jetty. DipServer may not be available.", ex);
         }

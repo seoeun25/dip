@@ -1,8 +1,8 @@
 package com.nexr.dip.rest;
 
+import com.google.inject.Inject;
 import com.nexr.dip.DipLoaderException;
 import com.nexr.dip.jpa.DipPropertyQueryExecutor;
-import com.nexr.dip.loader.Loader;
 import com.nexr.dip.loader.ScheduledService;
 import com.nexr.dip.loader.TopicManager;
 import org.json.simple.JSONObject;
@@ -17,7 +17,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Response;
 
-@Path("/v1")
+@Path("dip/v1")
 public class Topic {
 
     private static Logger LOG = LoggerFactory.getLogger(Topic.class);
@@ -27,6 +27,11 @@ public class Topic {
     private ScheduledService scheduledService;
 
     public Topic() {
+    }
+
+    @Inject
+    public void setScheduledService(ScheduledService scheduledService) {
+        this.scheduledService = scheduledService;
     }
 
     @GET
@@ -42,7 +47,7 @@ public class Topic {
     public Response getTopic() {
 
         try {
-            JSONObject jsonObject = ScheduledService.getInstance().toJsonObject();
+            JSONObject jsonObject = scheduledService.toJsonObject();
             return Response.status(200).entity(jsonObject.toJSONString()).build();
         } catch (Exception e) {
             return Response.status(500).entity(e.getMessage()).build();
@@ -55,7 +60,7 @@ public class Topic {
     @Produces("application/json")
     public Response getTopicOf(@PathParam("topic") String topicName) {
         try {
-            JSONObject jsonObject = ScheduledService.getInstance().toJsonObject(topicName);
+            JSONObject jsonObject = scheduledService.toJsonObject(topicName);
             if (jsonObject == null) {
                 throw new IllegalArgumentException("Topic not found : " + topicName);
             }
@@ -76,9 +81,9 @@ public class Topic {
                 throw new DipLoaderException("Illegal action : " + action);
             }
             if (action.equals("start")) {
-                status = ScheduledService.getInstance().restartTopicManager(topic);
+                status = scheduledService.restartTopicManager(topic);
             } else if (action.equals("end")) {
-                status = ScheduledService.getInstance().closeTopicManager(topic);
+                status = scheduledService.closeTopicManager(topic);
             } else {
                 throw new DipLoaderException("Illegal action : " + action);
             }

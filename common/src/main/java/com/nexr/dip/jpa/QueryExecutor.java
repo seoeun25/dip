@@ -26,10 +26,6 @@ public abstract class QueryExecutor<T, E extends Enum<E>> {
 
     }
 
-    protected QueryExecutor(JDBCService jdbcService) {
-        this.jdbcService = jdbcService;
-    }
-
     @Inject
     public void setJdbcService(JDBCService jdbcService) {
         this.jdbcService = jdbcService;

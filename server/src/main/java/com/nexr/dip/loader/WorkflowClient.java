@@ -1,5 +1,6 @@
 package com.nexr.dip.loader;
 
+import com.nexr.dip.Context;
 import com.nexr.dip.server.DipContext;
 import org.apache.oozie.client.OozieClient;
 import org.apache.oozie.client.WorkflowJob;
@@ -12,15 +13,14 @@ public class WorkflowClient {
 
     public static final Logger LOG = LoggerFactory.getLogger(WorkflowClient.class);
     public static long POLLING = 5000; //ms
-    private DipContext dipContext;
     private String oozieUrl;
     private String user;
     private String nameNode;
     private String jobTracker;
     private String hiveServer;
 
-    public WorkflowClient(DipContext dipContext) {
-        this.dipContext = dipContext;
+    public WorkflowClient(Context dipContext) {
+        LOG.info("----- context : " + dipContext);
         this.oozieUrl = dipContext.getConfig(DipContext.DIP_OOZIE);
         this.nameNode = dipContext.getConfig(DipContext.DIP_NAMENODE);
         this.jobTracker = dipContext.getConfig(DipContext.DIP_JOBTRACKER);
@@ -35,9 +35,17 @@ public class WorkflowClient {
 
     }
 
+    public static boolean isTerminated(WorkflowJob.Status status) {
+        if (status == WorkflowJob.Status.SUCCEEDED || status == WorkflowJob.Status.KILLED
+                || status == WorkflowJob.Status.FAILED) {
+            return true;
+        }
+        return false;
+    }
+
     public String run(Properties props) throws Exception {
         Properties defaultProps = getDefaultProperties();
-        for (String key: props.stringPropertyNames()) {
+        for (String key : props.stringPropertyNames()) {
             defaultProps.put(key, props.getProperty(key));
         }
 
@@ -59,20 +67,6 @@ public class WorkflowClient {
         return id;
     }
 
-    public WorkflowJob.Status monitorJob(String jobID) throws Exception {
-        OozieClient client = getClient();
-        WorkflowJob.Status status = client.getJobInfo(jobID).getStatus();
-
-        while (!isTerminated(status)) {
-            status = client.getJobInfo(jobID).getStatus();
-            LOG.info("[{}] status = [{}]", jobID, status);
-            System.out.println(" ---- status : " + jobID + " , " + status);
-            Thread.sleep(POLLING);
-        }
-        LOG.info("[{}] finished, {}", jobID, status);
-        return status;
-    }
-
 //    public WorkflowJob.Status monitorJob(Loader loader) throws Exception {
 //        OozieClient client = getClient();
 //        WorkflowJob.Status status = client.getJobInfo(jobID).getWfStatus();
@@ -86,14 +80,19 @@ public class WorkflowClient {
 //        return status;
 //    }
 
-    public static boolean isTerminated(WorkflowJob.Status status) {
-        if (status == WorkflowJob.Status.SUCCEEDED || status == WorkflowJob.Status.KILLED
-                || status == WorkflowJob.Status.FAILED) {
-            return true;
-        }
-        return false;
-    }
+    public WorkflowJob.Status monitorJob(String jobID) throws Exception {
+        OozieClient client = getClient();
+        WorkflowJob.Status status = client.getJobInfo(jobID).getStatus();
 
+        while (!isTerminated(status)) {
+            status = client.getJobInfo(jobID).getStatus();
+            LOG.info("[{}] status = [{}]", jobID, status);
+            System.out.println(" ---- status : " + jobID + " , " + status);
+            Thread.sleep(POLLING);
+        }
+        LOG.info("[{}] finished, {}", jobID, status);
+        return status;
+    }
 
     public Properties getDefaultProperties() {
         Properties configs = new Properties();

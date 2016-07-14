@@ -1,20 +1,18 @@
-package com.nexr.module;
+package com.nexr.dip.module;
 
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
-import com.google.inject.Singleton;
-import com.google.inject.name.Names;
 import com.google.inject.servlet.GuiceFilter;
 import com.google.inject.servlet.GuiceServletContextListener;
 import com.nexr.dip.AppService;
 import com.nexr.dip.Context;
 import com.nexr.dip.DipException;
 import com.nexr.dip.jpa.JDBCService;
-import com.nexr.dip.jpa.QueryExecutor;
-import com.nexr.jpa.SchemaInfoQueryExceutor;
-import com.nexr.rest.RESTRepository;
+import com.nexr.dip.jpa.LoadResultQueryExecutor;
+import com.nexr.dip.loader.ScheduledService;
+import com.nexr.dip.rest.Topic;
 import com.sun.jersey.guice.JerseyServletModule;
 import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
 import org.eclipse.jetty.server.Server;
@@ -25,10 +23,10 @@ import org.slf4j.LoggerFactory;
 
 import javax.servlet.ServletContextEvent;
 
-public class JettyWebServer implements AppService {
+public class DipWebServer implements AppService {
 
-    public static int DEFAULT_PORT = 18181;
-    private static Logger LOG = LoggerFactory.getLogger(JettyWebServer.class);
+    public static int DEFAULT_PORT = 17171;
+    private static Logger LOG = LoggerFactory.getLogger(DipWebServer.class);
     private Server jettyServer;
 
     @Inject
@@ -36,7 +34,7 @@ public class JettyWebServer implements AppService {
 
     private Injector baseInjector;
 
-    public JettyWebServer() {
+    public DipWebServer() {
 
     }
 
@@ -47,7 +45,7 @@ public class JettyWebServer implements AppService {
 
     @Override
     public void start() throws DipException {
-        jettyServer = new Server(context.getInt("schemarepo.port", DEFAULT_PORT));
+        jettyServer = new Server(context.getInt("dip.port", DEFAULT_PORT));
 
         // Create a servlet context and add the jersey servlet.
         ServletContextHandler sch = new ServletContextHandler(jettyServer, "/");
@@ -64,16 +62,7 @@ public class JettyWebServer implements AppService {
         // This is not needed if web.xml is used instead.
         sch.addServlet(DefaultServlet.class, "/");
 
-//        ContextHandlerCollection contexts = new ContextHandlerCollection();
-//        jettyServer.setHandler(contexts);
-//
-//        org.mortbay.jetty.servlet.Context root = new org.mortbay.jetty.servlet.Context(contexts, "/repo", org.mortbay.jetty.servlet.Context.SESSIONS);
-//        root.addEventListener(new GuiceServletConfig(baseInjector));
-//        ServletHolder jerseyServlet = new ServletHolder(ServletContainer.class);
-//        jerseyServlet.setInitOrder(0);
-//        jerseyServlet.setInitParameter("com.sun.jersey.config.property.packages", "com.nexr.rest");
-//
-//        root.addServlet(jerseyServlet, "/*");
+        //root.setAttribute("scheduledService", scheduledService);
 
         try {
             // Start the server
@@ -98,7 +87,7 @@ public class JettyWebServer implements AppService {
         }
         try {
             jettyServer.join();
-        }  catch (InterruptedException e) {
+        } catch (InterruptedException e) {
             throw new DipException(e);
         }
     }
@@ -106,6 +95,7 @@ public class JettyWebServer implements AppService {
     private static class GuiceServletConfig extends GuiceServletContextListener {
 
         private final Injector bInjector;
+
         GuiceServletConfig(Injector injector) {
             this.bInjector = injector;
         }
@@ -120,7 +110,7 @@ public class JettyWebServer implements AppService {
             return Guice.createInjector(new JerseyServletModule() {
                 @Override
                 protected void configureServlets() {
-                    bind(RESTRepository.class);
+                    bind(Topic.class);
                     serve("/*").with(GuiceContainer.class);
                 }
 
@@ -132,13 +122,17 @@ public class JettyWebServer implements AppService {
                 }
 
                 @Provides
-                SchemaInfoQueryExceutor provideSchemaInfoQueryExecutor() {
-                    SchemaInfoQueryExceutor queryExceutor = bInjector.getInstance(SchemaInfoQueryExceutor.class);
+                LoadResultQueryExecutor provideLoadResultQueryExecutor() {
+                    LoadResultQueryExecutor queryExceutor = bInjector.getInstance(LoadResultQueryExecutor.class);
                     LOG.info("---- GuiceServletConfig baseInjector : queryExceutor : " + queryExceutor);
                     return queryExceutor;
+                }
+
+                @Provides
+                ScheduledService provideScheduledService() {
+                    return bInjector.getInstance(ScheduledService.class);
                 }
             });
         }
     }
-
 }

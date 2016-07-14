@@ -1,6 +1,10 @@
 package com.nexr.dip.loader;
 
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import com.nexr.dip.Context;
 import com.nexr.dip.server.DipContext;
+import com.nexr.dip.server.DipServer;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -13,7 +17,11 @@ public class WorkflowClientTest {
 
     @BeforeClass
     public static void beforeClass() {
-        DipContext dipContext = DipContext.getContext();
+
+        System.setProperty("persistenceUnit", "dip-test-hsql");
+        Injector injector = Guice.createInjector(new DipServer());
+
+        Context dipContext = injector.getInstance(Context.class);
         dipContext.setConfig(DipContext.DIP_OOZIE, "http://sembp:11000/oozie");
         dipContext.setConfig(DipContext.DIP_NAMENODE, "hdfs://sembp:8020");
         dipContext.setConfig(DipContext.DIP_JOBTRACKER, "sembp:8032");
@@ -26,7 +34,8 @@ public class WorkflowClientTest {
 
         String name = "employee";
         String appPath = "hdfs://sembp:8020/user/ndap/dip/apps/" + name;
-        Loader loader = new Loader(name, appPath, Loader.SrcType.avro, System.currentTimeMillis(), 1000);
+        Loader loader = new Loader(new TopicManager.TopicDesc(name, appPath, Loader.SrcType.avro), System.currentTimeMillis(),
+                1000);
 
         try {
             LoadResult result = loader.call();

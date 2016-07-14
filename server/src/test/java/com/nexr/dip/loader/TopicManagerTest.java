@@ -1,6 +1,10 @@
 package com.nexr.dip.loader;
 
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import com.nexr.dip.Context;
 import com.nexr.dip.server.DipContext;
+import com.nexr.dip.server.DipServer;
 import junit.framework.Assert;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -23,17 +27,25 @@ public class TopicManagerTest {
     private static ScheduledService scheduledService;
     private static TopicManager topicManager;
     private static Loader loader;
+    private static Context context;
+    private static HDFSClient hdfsClient;
 
     @BeforeClass
     public static void setupClass() {
-        DipContext.getContext();
-        scheduledService = ScheduledService.getInstance();
-        topicManager = new TopicManager(scheduledService, "employee", "", Loader.SrcType.avro, System.currentTimeMillis() + (1000 *
-                2));
+        System.setProperty("persistenceUnit", "dip-test-hsql");
+        Injector injector = Guice.createInjector(new DipServer());
+
+        context = injector.getInstance(Context.class);
+        hdfsClient = injector.getInstance(HDFSClient.class);
+
+        //FIXME
+        //scheduledService = ScheduledService.getInstance();
+        TopicManager.TopicDesc topicDesc = new TopicManager.TopicDesc("employee", "", Loader.SrcType.avro);
+        topicManager = new TopicManager(topicDesc, scheduledService, System.currentTimeMillis() + (1000 * 2));
 
         String name = "employee";
         String appPath = "hdfs://sembp:8020/user/ndap/dip/apps/" + name;
-        loader = new Loader(name, appPath, Loader.SrcType.avro, System.currentTimeMillis(), 1000 * 60);
+        loader = new Loader(topicDesc, System.currentTimeMillis(), 1000 * 60);
 
     }
 
@@ -42,7 +54,8 @@ public class TopicManagerTest {
 
         String name = "employee";
         String appPath = "hdfs://sembp:8020/user/ndap/dip/apps/" + name;
-        Loader loader = new Loader(name, appPath, Loader.SrcType.avro, System.currentTimeMillis(), 1000 * 2);
+        Loader loader = new Loader(new TopicManager.TopicDesc(name, appPath, Loader.SrcType.avro), System.currentTimeMillis(),
+                1000 * 2);
 
         try {
             topicManager.executeLoader(loader, 1000 * 2);
@@ -57,7 +70,7 @@ public class TopicManagerTest {
     @Test
     public void testHadoopConf() {
         try {
-            Configuration configuration = HDFSClient.getInstance().loadHadoopConf();
+            Configuration configuration = hdfsClient.loadHadoopConf();
             Iterator<Map.Entry<String, String>> iterator = configuration.iterator();
             while (iterator.hasNext()) {
                 Map.Entry<String, String> entry = iterator.next();
@@ -153,7 +166,8 @@ public class TopicManagerTest {
     public void testCleanup() {
         String name = "employee";
         String appPath = "hdfs://sembp:8020/user/ndap/dip/apps/" + name;
-        Loader loader = new Loader(name, appPath, Loader.SrcType.avro, System.currentTimeMillis(), 1000 * 2);
+        Loader loader = new Loader(new TopicManager.TopicDesc(name, appPath, Loader.SrcType.avro), System.currentTimeMillis(),
+                1000 * 2);
 
         try {
             loader.getLoadResult().setError("Some topics skipped due to failure in getting latest offset from Kafka leaders");
@@ -174,10 +188,10 @@ public class TopicManagerTest {
 
     @Test
     public void testDeleteOnHDFS() {
-        String path = DipContext.getContext().getConfig(DipContext.DIP_NAMENODE) +
+        String path = context.getConfig(DipContext.DIP_NAMENODE) +
                 "/user/seoeun/dip/srcinfos/employee/daily/20151003/employee.0.9.260" + ".41607" + ".1443711600000.avro";
         try {
-            boolean result = HDFSClient.getInstance().delete(new Path(path));
+            boolean result = hdfsClient.delete(new Path(path));
             System.out.println("result : " + result);
         } catch (Exception e) {
             e.printStackTrace();

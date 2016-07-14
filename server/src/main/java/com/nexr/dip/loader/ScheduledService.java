@@ -2,7 +2,10 @@ package com.nexr.dip.loader;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.google.inject.Inject;
+import com.nexr.dip.Context;
 import com.nexr.dip.DipLoaderException;
+import com.nexr.dip.jpa.LoadResultQueryExecutor;
 import com.nexr.dip.server.DipContext;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -30,30 +33,44 @@ public class ScheduledService {
 
     public static final Logger LOG = LoggerFactory.getLogger(ScheduledService.class);
 
-    private static ScheduledService scheduledService;
     private ScheduledExecutorService executorService;
 
     private List<TopicManager> topicManagerList;
 
     private boolean shutdown = false;
 
+    private final Context context;
 
-    private ScheduledService() {
+    private final HDFSClient hdfsClient;
+
+    private final LoadResultQueryExecutor loadResultQueryExecutor;
+
+    @Inject
+    public ScheduledService(Context context, HDFSClient hdfsClient, LoadResultQueryExecutor loadResultQueryExecutor) {
+        LOG.info("---- constructor SchedudledService:  context : " + context);
+        this.context = context;
+        this.hdfsClient = hdfsClient;
+        this.loadResultQueryExecutor = loadResultQueryExecutor;
         String loaderName = "loader-%d";
         executorService = Executors.newScheduledThreadPool(100, new ThreadFactoryBuilder().setNameFormat(loaderName).build());
 
         topicManagerList = new ArrayList<TopicManager>();
     }
 
-    public static ScheduledService getInstance() {
-        if (scheduledService == null) {
-            scheduledService = new ScheduledService();
-        }
-        return scheduledService;
+    public Context getContext() {
+        return context;
+    }
+
+    public HDFSClient getHdfsClient() {
+        return hdfsClient;
+    }
+
+    public LoadResultQueryExecutor getLoadResultQueryExecutor() {
+        return loadResultQueryExecutor;
     }
 
     public void start() throws DipLoaderException {
-
+        LOG.info("---- start SchedudledService : context" + context);
         try {
             initScheduleTask();
         }catch (Exception e) {
@@ -72,15 +89,15 @@ public class ScheduledService {
             LOG.warn("Fail to parse, Use current time as initialExecutionTime", e);
         }
 
-        String[] avroTopics = DipContext.getContext().getConfig(DipContext.AVRO_TOPICS).split(",");
+        String[] avroTopics = context.getConfig(DipContext.AVRO_TOPICS).split(",");
         long lastExecutionTime = createTask(appPathTemplate, avroTopics, Loader.SrcType.avro, initialExecutionTime);
-        String[] textTopics = DipContext.getContext().getConfig(DipContext.TEXT_TOPICS).split(",");
+        String[] textTopics = context.getConfig(DipContext.TEXT_TOPICS).split(",");
         lastExecutionTime = createTask(appPathTemplate, textTopics, Loader.SrcType.text,
-                lastExecutionTime + DipContext.getContext().getLong("dip.execution.topic.interval", 1000 * 60 * 2));
+                lastExecutionTime + context.getLong("dip.execution.topic.interval", 1000 * 60 * 2));
     }
 
     private long createTask(String appPathTemplate, String[] topics, Loader.SrcType srcType, long initialExecutionTime) {
-        long topicInterval = DipContext.getContext().getLong("dip.execution.topic.interval", 1000 * 60 * 2); // 2 minutes
+        long topicInterval = context.getLong("dip.execution.topic.interval", 1000 * 60 * 2); // 2 minutes
 
         int i = 0;
         long executionTime = 0;
@@ -91,7 +108,7 @@ public class ScheduledService {
             }
             String appPath = appPathTemplate.replace("${appName}", topic);
             executionTime = initialExecutionTime + (i * topicInterval);
-            TopicManager topicManager = new TopicManager(this, topic, appPath, srcType, executionTime);
+            TopicManager topicManager = new TopicManager(new TopicManager.TopicDesc(topic, appPath, srcType), this,executionTime);
             topicManager.start();
             topicManagerList.add(topicManager);
             i++;
@@ -107,13 +124,13 @@ public class ScheduledService {
             appPathTemplate = appPathTemplate.replace("${nameNode}", jobProperties.getProperty("nameNode"));
         }
         if ( appPathTemplate.contains("${user.name}"))  {
-            appPathTemplate = appPathTemplate.replace("${user.name}", DipContext.getContext().getConfig(DipContext.DIP_USER_NAME)) ;
+            appPathTemplate = appPathTemplate.replace("${user.name}", context.getConfig(DipContext.DIP_USER_NAME)) ;
         }
         if (appPathTemplate.contains("${root}")) {
             appPathTemplate = appPathTemplate.replace("${root}", jobProperties.getProperty("root"));
         }
         if (appPathTemplate.contains("${dipNameNode}")) {
-            appPathTemplate = appPathTemplate.replace("${dipNameNode}", DipContext.getContext().getConfig(DipContext.DIP_NAMENODE));
+            appPathTemplate = appPathTemplate.replace("${dipNameNode}", context.getConfig(DipContext.DIP_NAMENODE));
         }
 
         return appPathTemplate;

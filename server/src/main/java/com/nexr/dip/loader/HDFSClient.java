@@ -1,6 +1,8 @@
 package com.nexr.dip.loader;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.inject.Inject;
+import com.nexr.dip.Context;
 import com.nexr.dip.server.DipContext;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -26,7 +28,11 @@ public class HDFSClient {
     private Configuration configuration;
     private String user;
 
-    private HDFSClient() {
+    private final Context context;
+
+    @Inject
+    public HDFSClient(Context context) {
+        this.context = context;
         try {
             this.configuration = loadHadoopConf();
         } catch (IOException e) {
@@ -37,13 +43,6 @@ public class HDFSClient {
         configuration.set("fs.hdfs.impl", org.apache.hadoop.hdfs.DistributedFileSystem.class.getName());
 
         user = System.getProperty("user.name");
-    }
-
-    public static HDFSClient getInstance() {
-        if (instance == null) {
-            instance = new HDFSClient();
-        }
-        return instance;
     }
 
     public FileSystem createFileSystem(String user, final URI uri) throws Exception{
@@ -80,8 +79,8 @@ public class HDFSClient {
 
     public Configuration loadHadoopConf() throws IOException {
         Configuration hadoopConf = new Configuration();
-        if (DipContext.getContext().getConfig(DipContext.DIP_HADOOP_CONF) != null) {
-            File dir = new File(DipContext.getContext().getConfig(DipContext.DIP_HADOOP_CONF));
+        if (context.getConfig(DipContext.DIP_HADOOP_CONF) != null) {
+            File dir = new File(context.getConfig(DipContext.DIP_HADOOP_CONF));
             String[] HADOOP_CONF_FILES = {"core-site.xml", "hdfs-site.xml", "mapred-site.xml", "yarn-site.xml", "hadoop-site.xml"};
             for (String file : HADOOP_CONF_FILES) {
                 File f = new File(dir, file);

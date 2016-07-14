@@ -78,8 +78,6 @@ public class AvroSchemaRegistryTest {
     @Test
     public void test() {
         System.out.println("hello");
-
-
     }
 
     @Test

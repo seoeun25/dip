@@ -1,13 +1,12 @@
 package com.nexr.dip.server;
 
-import com.google.common.annotations.VisibleForTesting;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.nexr.dip.Context;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Properties;
-
-public class DipContext {
+public class DipContext extends Context{
 
     public static final String AVRO_TOPICS = "dip.avro.topics";
     public static final String TEXT_TOPICS = "dip.text.topics";
@@ -38,48 +37,9 @@ public class DipContext {
 
     private Context context;
 
-    private final String SITE_CONFIG = "dip.conf";
-    private final String DEFAULT_CONFIG = "dip-default.conf";
-
-    private DipContext() {
-        context = new Context(SITE_CONFIG, DEFAULT_CONFIG);
+    @Inject
+    public DipContext(@Named("siteConfig") String siteConfig, @Named("defaultConfig") String defaultConfig) {
+        super(siteConfig, defaultConfig);
     }
-
-    public static DipContext getContext() {
-        if (dipContext == null) {
-            dipContext = new DipContext();
-        }
-        return dipContext;
-    }
-
-    public String getConfig(String name) {
-        return context.getConfig(name);
-    }
-
-    public long getLong(String name, long defaultValue) {
-        try {
-            return Long.parseLong(getConfig(name));
-        } catch (Exception e) {
-            return defaultValue;
-        }
-    }
-
-    public int getInt(String name, int defaultValue) {
-        try {
-            return Integer.parseInt(getConfig(name));
-        } catch (Exception e) {
-            return defaultValue;
-        }
-    }
-
-    @VisibleForTesting
-    public void setConfig(String name, String value) {
-        context.setConfig(name, value);
-    }
-
-    public Properties getProperties() {
-        return context.getProperties();
-    }
-
 
 }

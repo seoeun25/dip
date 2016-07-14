@@ -1,11 +1,12 @@
 package com.nexr.dip.loader;
 
+import com.google.inject.Inject;
+import com.nexr.dip.Context;
 import com.nexr.dip.DipException;
 import com.nexr.dip.DipLoaderException;
 import com.nexr.dip.common.Utils;
 import com.nexr.dip.jpa.LoadResultQueryExecutor;
 import com.nexr.dip.server.DipContext;
-import com.nexr.dip.jpa.JDBCService;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,44 +19,54 @@ import java.util.concurrent.TimeUnit;
 /**
  * Manage the life cycle of the loader by topic.
  */
-public class TopicManager {
+public class TopicManager<T extends TopicManager.TopicDesc> {
 
     public static final Logger LOG = LoggerFactory.getLogger(TopicManager.class);
     private Loader currentLoader = null;
     private ScheduledService scheduledService;
-    private String name;
-    private String appPath;
-    private Loader.SrcType srcType;
     private long initialExecutionTime;
     private long interval;
     private STATUS status = STATUS.START;
     private LoadResultQueryExecutor loadResultQueryExecutor;
 
-    public TopicManager(ScheduledService scheduledService, String name, String appPath, Loader.SrcType srcType, long
-            initialExecutionTime) {
+    private Context context;
+
+    private T topicDesc;
+    private String name;
+
+    public TopicManager(T topicDesc, ScheduledService scheduledService, long initialExecutionTime) {
+        this.topicDesc = topicDesc;
         this.scheduledService = scheduledService;
-        this.name = name;
-        this.appPath = appPath;
-        this.srcType = srcType;
         this.initialExecutionTime = initialExecutionTime;
+        this.name = topicDesc.getName();
+        this.context = scheduledService.getContext();
+        this.loadResultQueryExecutor = scheduledService.getLoadResultQueryExecutor();
 
-        long defaultScheduleInterval = DipContext.getContext().getLong("dip.load.schedule.interval", 1000 * 60 * 60); // 1 hour
-        interval = DipContext.getContext().getLong("dip.load.schedule." + name + ".interval",
-                defaultScheduleInterval);
-
-        //FIXME
-        //loadResultQueryExecutor = new LoadResultQueryExecutor(JDBCService.getInstance("dip", "dip-master-mysql"));
+        // FIXME
+        long defaultScheduleInterval = context.getLong("dip.load.schedule.interval", 1000 * 60 * 60); // 1 hour
+        interval = context.getLong("dip.load.schedule." + name + ".interval", defaultScheduleInterval);
 
     }
 
+    public T getTopicDesc() {
+        return topicDesc;
+    }
+
+    @Inject
+    public void setContext(Context context) {
+        LOG.info("===== TopicManager set context : " + context);
+        this.context = context;
+    }
+
     public void start() {
+        LOG.info("---- TopicManager start, context:" + context);
         status = STATUS.RUNNING;
-        Loader loader = new Loader(name, appPath, srcType, initialExecutionTime, interval);
+        Loader loader = new Loader(topicDesc, initialExecutionTime, interval);
         scheduleLoader(loader, null);
     }
 
     private Loader createLoader(long executionTime) {
-        Loader loader = new Loader(name, appPath, srcType, executionTime, interval);
+        Loader loader = new Loader(topicDesc, executionTime, interval);
         return loader;
     }
 
@@ -250,13 +261,12 @@ public class TopicManager {
             nextExecutionTime += loader.getInterval();
             LOG.info("NextExecutionTime is passed, set to next interval");
         }
-        Loader nextLoader = new Loader(loader.getName(), loader.getAppPath(), srcType, nextExecutionTime, loader
-                .getInterval());
+        Loader nextLoader = new Loader(loader.getTopicDesc(), nextExecutionTime, loader.getInterval());
         scheduleLoader(nextLoader, loader);
     }
 
     private void onRetry(Loader loader) {
-        int max = DipContext.getContext().getInt(DipContext.DIP_SCHEDULE_RETRY_MAX, 3);
+        int max = context.getInt(DipContext.DIP_SCHEDULE_RETRY_MAX, 3);
         int retryCount = loader.getRetryCount();
         LOG.warn("onRetry : [{}] retryCount {} ", loader.getName(), retryCount);
         if (retryCount >= max) {
@@ -266,8 +276,7 @@ public class TopicManager {
 
         retryCount++;
         long nextExecutionTime = System.currentTimeMillis() + (1000 * 60 * retryCount);
-        Loader nextLoader = new Loader(loader.getName(), loader.getAppPath(), srcType, nextExecutionTime, loader
-                .getInterval(), retryCount);
+        Loader nextLoader = new Loader(loader.getTopicDesc(), nextExecutionTime, loader.getInterval(), retryCount);
         scheduleLoader(nextLoader, loader);
     }
 
@@ -281,21 +290,21 @@ public class TopicManager {
             currentLoader = null;
             return;
         }
-        LOG.info("clear current loader : {} >>> load result {}", loader.getHeader() + ", " +loader.getStatus(), loader
+        LOG.info("clear current loader : {} >>> load result {}", loader.getHeader() + ", " + loader.getStatus(), loader
                 .getLoadResult()
                 .getStatus());
 
         if (!loader.equals(currentLoader)) {
             LOG.warn("CurrentLoader is wrong, current [{}], loader [{}]", currentLoader.toString(), loader.toString());
         }
-        if (currentLoader.getStatus() != Loader.STATUS.END ) {
+        if (currentLoader.getStatus() != Loader.STATUS.END) {
             LOG.warn("Loader is not terminated : {}", currentLoader.toString());
         }
         currentLoader = null;
     }
 
     public void debugLoaderStatus() {
-            LOG.info("LoaderStatus [{}]", currentLoader.toString());
+        LOG.info("LoaderStatus [{}]", currentLoader.toString());
     }
 
     public JSONObject toJsonObject() {
@@ -336,6 +345,29 @@ public class TopicManager {
         RUNNING,
         CLOSING, // running but no more adding loader
         END;
+    }
+
+    static class TopicDesc {
+        private String name;
+        private String appPath;
+        private Loader.SrcType srcType;
+        TopicDesc(String name, String appPath, Loader.SrcType srcType) {
+            this.name = name;
+            this.appPath = appPath;
+            this.srcType = srcType;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getAppPath() {
+            return appPath;
+        }
+
+        public Loader.SrcType getSrcType() {
+            return srcType;
+        }
     }
 
 }
