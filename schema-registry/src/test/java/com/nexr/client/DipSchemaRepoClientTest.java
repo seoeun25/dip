@@ -69,9 +69,18 @@ public class DipSchemaRepoClientTest {
         long currentTime = System.currentTimeMillis();
 
         try {
+            SchemaInfo schemaInfo = client.getSchemaBySubject(topicName);
+            Assert.fail();
+        }catch (Exception e) {
+
+        }
+
+        try{
+            Assert.assertEquals(0, client.getSchemaLatestAll().size());
+
             String id = client.register(topicName, Schemas.employee_schema1);
             Assert.assertNotNull(id);
-            System.out.println("registered id : " + id);
+
             // already exists that schema under the subject
             String id2 = client.register(topicName, Schemas.employee_schema2);
             Assert.assertEquals(id, id2);
@@ -83,14 +92,13 @@ public class DipSchemaRepoClientTest {
             String ffttId = client.register(Schemas.ftth_if, Schemas.ftth_if_schema);
             // all subjects
             List<SchemaInfo> schemaInfoList = client.getSchemaLatestAll();
-            for (SchemaInfo subject : schemaInfoList) {
-                System.out.println("--- schema : " + subject);
-            }
+
             Assert.assertEquals(3, schemaInfoList.size());
 
 
             String id3 = client.register(topicName, Schemas.employee_schema3);
             String id4 = client.register(topicName, Schemas.employee_schema4);
+            Assert.assertFalse(id3.equals(id4));
             System.out.println("id3 : " + id3);
             System.out.println("id4 : " + id4);
 
@@ -100,7 +108,6 @@ public class DipSchemaRepoClientTest {
 
             // get by subject by id
             Assert.assertNotNull(client.getSchemaBySubjectAndId(topicName, id3));
-
 
             Thread.sleep(1000);
 
@@ -114,9 +121,8 @@ public class DipSchemaRepoClientTest {
 
         try {
             SchemaInfo schemaInfo1 = client.getSchemaBySubject("not-exist");
-            Assert.assertNull(schemaInfo1);
+            Assert.fail();
         } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 

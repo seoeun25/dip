@@ -6,6 +6,8 @@ import com.linkedin.camus.schemaregistry.SchemaRegistry;
 import com.nexr.client.DipSchemaRepoClient;
 import org.apache.avro.Schema;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 
 public class AvroSchemaRegistry implements SchemaRegistry<Schema> {
@@ -32,7 +34,11 @@ public class AvroSchemaRegistry implements SchemaRegistry<Schema> {
     @Override
     public String register(String topicName, Schema schema) {
         // TODO validation and throw SchemaViolationException
-        return client.register(topicName, schema.toString());
+        try {
+            return client.register(topicName, schema.toString());
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public String register(String topicName, String schemaStr) {
@@ -42,20 +48,32 @@ public class AvroSchemaRegistry implements SchemaRegistry<Schema> {
 
     @Override
     public Schema getSchemaByID(String topicName, String id) {
-        SchemaInfo schemaInfo = client.getSchemaBySubjectAndId(topicName, id);
-        if (schemaInfo == null) {
-            throw new SchemaNotFoundException("Schema not found for [" + topicName + "], id[" + id + "]");
+        SchemaInfo schemaInfo = null;
+        try {
+            schemaInfo = client.getSchemaBySubjectAndId(topicName, id);
+        } catch (Exception e) {
+            throw new SchemaNotFoundException("Schema Not Found for [" + topicName + "], id[" + id + "]");
         }
         return Schema.parse(schemaInfo.getSchemaStr());
     }
 
     @Override
     public SchemaDetails<Schema> getLatestSchemaByTopic(String topicName) {
-        SchemaInfo schemaInfo = client.getSchemaBySubject(topicName);
-        if (schemaInfo == null) {
-            throw new SchemaNotFoundException("Schema not found for [" + topicName + "]");
+        SchemaInfo schemaInfo = null;
+        try {
+            schemaInfo = client.getSchemaBySubject(topicName);
+        } catch (Exception e) {
+            throw new SchemaNotFoundException("Schema Not Found for [" + topicName + "]");
         }
         return new SchemaDetails<Schema>(topicName, String.valueOf(schemaInfo.getId()), Schema.parse(schemaInfo.getSchemaStr()));
+    }
+
+    public List<SchemaInfo> getSchemaLatestAll(){
+        try {
+            return client.getSchemaLatestAll();
+        }catch (Exception e) {
+            return Collections.emptyList();
+        }
     }
 
     public void destroy() {

@@ -1,5 +1,7 @@
 package com.nexr.dip.common;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import junit.framework.Assert;
 import org.junit.Test;
 
 public class UtilsTest {
@@ -20,6 +22,19 @@ public class UtilsTest {
         System.out.println(sTime);
     }
 
-    public void hi() {
+    @Test
+    public void testErrorMessage() {
+        String message = "hello azrael, you are in trouble";
+        String errorJson = Utils.convertErrorObjectToJson(404, message);
+
+        System.out.println(errorJson);
+        ObjectMapper jsonDeserializer = new ObjectMapper();
+        try {
+            ErrorObject errorObject = jsonDeserializer.readValue(errorJson, ErrorObject.class);
+            Assert.assertEquals(404, errorObject.getStatus());
+            Assert.assertEquals(message, errorObject.getMessage());
+        } catch (Exception e) {
+            Assert.fail();
+        }
     }
 }

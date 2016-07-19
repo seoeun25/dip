@@ -22,12 +22,16 @@
             <artifactId>dip-common</artifactId>
             <version>${version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.nexr</groupId>
+            <artifactId>dip-schema-registry-client</artifactId>
+            <version>${version}</version>
+        </dependency>
 
         <!-- Avro -->
         <dependency>
             <groupId>org.apache.avro</groupId>
             <artifactId>avro</artifactId>
-            <version>${avro.version}</version>
         </dependency>
 
         <!-- Camus -->

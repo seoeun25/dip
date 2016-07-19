@@ -90,6 +90,7 @@ public class SchemaInfoQueryExecutorTest {
 
         } catch (Exception e) {
             e.printStackTrace();
+            Assert.fail();
         }
     }
 
