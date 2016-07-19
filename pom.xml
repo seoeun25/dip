@@ -29,6 +29,7 @@
         <module>server</module>
         <module>tool</module>
         <module>schema-registry</module>
+        <module>schema-registry-client</module>
         <module>camus</module>
     </modules>
 
@@ -126,6 +127,12 @@
                         <artifactId>camus-api</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.avro</groupId>
+                <artifactId>avro</artifactId>
+                <version>${avro.version}</version>
             </dependency>
 
             <dependency>
@@ -247,6 +254,12 @@
                 <groupId>com.google.inject.extensions</groupId>
                 <artifactId>guice-servlet</artifactId>
                 <version>4.0</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>2.5.4</version>
             </dependency>
 
             <dependency>

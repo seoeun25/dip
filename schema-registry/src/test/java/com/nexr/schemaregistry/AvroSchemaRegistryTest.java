@@ -12,6 +12,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.util.List;
 import java.util.Properties;
 
 public class AvroSchemaRegistryTest {
@@ -127,16 +128,28 @@ public class AvroSchemaRegistryTest {
         //lastSchema again
         Assert.assertEquals(id4, schemaRegistry.getLatestSchemaByTopic(topic).getId());
 
+        List<SchemaInfo> list = schemaRegistry.getSchemaLatestAll();
+        Assert.assertEquals(2, list.size());
+        for (SchemaInfo schemaInfo1 : list) {
+            try {
+                System.out.println(schemaInfo1.toJson());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
     }
 
     @Test
     public void testGetByTopicNegative() {
-
+        System.out.println("----- test");
         try {
             SchemaDetails schemaInfo1 = schemaRegistry.getLatestSchemaByTopic("not-exist");
+            System.out.println("---------------" + schemaInfo1);
             Assert.fail("schemaInfo should be null");
         } catch (SchemaNotFoundException e) {
             //e.printStackTrace();
+            Assert.assertTrue(e.getMessage().contains("Schema Not Found"));
         }
     }
 

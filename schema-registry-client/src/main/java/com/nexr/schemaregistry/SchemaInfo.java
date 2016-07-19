@@ -1,8 +1,8 @@
 package com.nexr.schemaregistry;
 
-import com.google.common.annotations.VisibleForTesting;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.avro.Schema;
-import org.json.simple.JSONObject;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -15,6 +15,7 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.xml.bind.annotation.XmlRootElement;
+import java.io.IOException;
 import java.util.Calendar;
 
 @Entity
@@ -43,7 +44,7 @@ public class SchemaInfo {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id" )
-    private long id;
+    private int id;
 
     @Column(name = "schemaStr", length = 20480)
     private String schemaStr;
@@ -62,56 +63,79 @@ public class SchemaInfo {
         this.created = Calendar.getInstance();
     }
 
-    public SchemaInfo(String name, long id, String schemaStr) {
+    public SchemaInfo(String name, int id, String schemaStr) {
         this.name = name;
         this.id = id;
         this.schemaStr = schemaStr;
         this.created = Calendar.getInstance();
     }
 
-    public long getId() {
+    public SchemaInfo(@JsonProperty("name") String name, @JsonProperty("id") int id, @JsonProperty("schemaStr") String
+            schemaStr, @JsonProperty("created") Long created) {
+        this.name = name;
+        this.id = id;
+        this.schemaStr = schemaStr;
+        Calendar createdCalendar = Calendar.getInstance();
+        createdCalendar.setTimeInMillis(created.longValue());
+        this.created = createdCalendar;
+    }
+
+    @JsonProperty("id")
+    public int getId() {
         return id;
     }
 
-    public void setId(long id) {
+    @JsonProperty("id")
+    public void setId(int id) {
         this.id = id;
     }
 
+    @JsonProperty("name")
     public String getName() {
         return name;
     }
 
+    @JsonProperty("name")
     public void setName(String name) {
         this.name = name;
     }
 
+    @JsonProperty("schemaStr")
     public String getSchemaStr() {
         return schemaStr;
     }
 
+    @JsonProperty("schemaStr")
     public void setSchemaStr(String schemaStr) {
         this.schemaStr = schemaStr;
     }
 
+    public Schema getSchema() {
+        Schema schema = new Schema.Parser().parse(schemaStr);
+        return schema;
+    }
+
+    @JsonProperty("created")
     public Calendar getCreated() {
         return created;
     }
 
+    @JsonProperty("created")
     public void setCreated(Calendar created) {
         this.created = created;
     }
 
-    public JSONObject toJsonOblect() {
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put("name", name);
-        jsonObject.put("id", id);
-        jsonObject.put("schemaStr", schemaStr);
-        jsonObject.put("created", created.getTimeInMillis());
-        return jsonObject;
+    public String toJson() throws IOException {
+        return (new ObjectMapper()).writeValueAsString(this);
     }
 
     public String toString() {
-        return toJsonOblect().toString();
+        StringBuilder builder = new StringBuilder();
+        builder.append("id="+id + ",");
+        builder.append("name="+name + ",");
+        builder.append("created=" + created.getTimeInMillis() + ",");
+        builder.append("schemaStr=" + schemaStr);
+        return builder.toString();
     }
 
     public Object[] toParams() {
@@ -119,7 +143,6 @@ public class SchemaInfo {
         return params;
     }
 
-    @VisibleForTesting
     public boolean eqaulsSchema(Schema schema) {
         Schema schema1 = new Schema.Parser().parse(schemaStr);
         return schema1.equals(schema);

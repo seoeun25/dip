@@ -48,4 +48,13 @@ public class Utils {
     public static String getDateString(long time) {
         return formatTime(time, "yyyy-MM-dd HH:mm:ss");
     }
+
+    public static String convertErrorObjectToJson(int status, String message) {
+        ErrorObject errorObject = new ErrorObject(status, message);
+        try {
+            return errorObject.toJson();
+        } catch (Exception e) {
+            return "{\"status\":" + status +",\"message\":\"" + message +"\"}";
+        }
+    }
 }
