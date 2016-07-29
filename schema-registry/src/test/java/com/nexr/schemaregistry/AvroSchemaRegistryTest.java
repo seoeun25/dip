@@ -82,7 +82,7 @@ public class AvroSchemaRegistryTest {
     }
 
     @Test
-    public void testRegisterAndGet() {
+    public void testRegisterAndGet() throws InterruptedException {
         String topic = Schemas.employee;
         try {
             SchemaDetails<Schema> schemaDetails = schemaRegistry.getLatestSchemaByTopic(topic);
@@ -93,13 +93,15 @@ public class AvroSchemaRegistryTest {
 
         String id = schemaRegistry.register(topic, Schemas.employee_schema1);
         System.out.println("id : " + id);
-        Assert.assertTrue(Long.parseLong(id) > 0);
+        Assert.assertTrue(Integer.parseInt(id) > 0);
         String id2 = schemaRegistry.register(topic, Schemas.employee_schema2);
         // same schema, contains spaces
         Assert.assertEquals(id, id2);
 
+        Thread.sleep(1000);
 
-        SchemaInfo schemaInfo = new SchemaInfo(topic, Long.parseLong(id), schemaRegistry.getSchemaByID(topic, id).toString());
+        SchemaInfo schemaInfo = new SchemaInfo(topic, Integer.parseInt(id), schemaRegistry.getSchemaByID(topic, id).toString
+                ());
 
         Schema employee3 = new Schema.Parser().parse(Schemas.employee_schema3);
         Assert.assertFalse(schemaInfo.eqaulsSchema(employee3));

@@ -29,7 +29,7 @@ public class SimpleSchemaRegistryClientTest {
             Assert.assertNotNull(schemaInfo);
             long id1 = schemaInfo.getId();
 
-            SchemaInfo schemaInfo2 = client.getSchemaById(topic, String.valueOf(id1));
+            SchemaInfo schemaInfo2 = client.getSchemaByTopicAndId(topic, String.valueOf(id1));
             Assert.assertNotNull(schemaInfo2);
 
             Assert.assertEquals(id1, schemaInfo2.getId());
@@ -50,9 +50,10 @@ public class SimpleSchemaRegistryClientTest {
             System.out.println(String.valueOf(end - start));
 
             try {
-                SchemaInfo schemaInfo3 = client.getSchemaById(topic, String.valueOf(3445677));
+                SchemaInfo schemaInfo3 = client.getSchemaByTopicAndId(topic, String.valueOf(3445677));
                 Assert.fail();
             } catch (SchemaClientException e) {
+                System.out.println(e.getMessage());
                 Assert.assertTrue(e.getMessage().contains("Schema Not Found"));
             }
 
@@ -70,6 +71,10 @@ public class SimpleSchemaRegistryClientTest {
 
             String id = client.register("test-topic", test_topic);
             Assert.assertNotNull(id);
+            System.out.println("--- test-topic id : " + id);
+
+            List<SchemaInfo> employeeList = client.getSchemaAllByTopic("employee");
+            System.out.println("employeeList size : " + employeeList.size());
 
         } catch (Exception e) {
             e.printStackTrace();

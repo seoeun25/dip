@@ -1,7 +1,6 @@
 package com.nexr.jpa;
 
 import com.nexr.dip.DipException;
-import com.nexr.dip.jpa.JDBCService;
 import com.nexr.dip.jpa.QueryExecutor;
 import com.nexr.schemaregistry.SchemaInfo;
 
@@ -40,6 +39,8 @@ public class SchemaInfoQueryExceutor extends QueryExecutor<SchemaInfo, SchemaInf
                 query.setParameter("name", parameters[0]);
                 query.setParameter("id", parameters[1]);
             case GET_BYTOPICLATEST:
+                query.setParameter("name", parameters[0]);
+            case GET_BYTOPICALL:
                 query.setParameter("name", parameters[0]);
             case GET_ALL:
                 break;
@@ -139,12 +140,13 @@ public class SchemaInfoQueryExceutor extends QueryExecutor<SchemaInfo, SchemaInf
             case GET_BYSCHEMA:
             case GET_BYID:
             case GET_BYTOPICLATEST:
+            case GET_BYTOPICALL:
             case GET_BYTOPICANDID:
             case GET_ALL:
                 bean = new SchemaInfo();
                 arr = (Object[]) ret;
                 bean.setName((String) arr[0]);
-                bean.setId((Long) arr[1]);
+                bean.setId((Integer) arr[1]);
                 bean.setSchemaStr((String) arr[2]);
                 bean.setCreated((Calendar) arr[3]);
                 break;
@@ -158,6 +160,7 @@ public class SchemaInfoQueryExceutor extends QueryExecutor<SchemaInfo, SchemaInf
         GET_BYSCHEMA,
         GET_BYID,
         GET_BYTOPICLATEST,
+        GET_BYTOPICALL,
         GET_BYTOPICANDID,
         GET_ALL;
     }

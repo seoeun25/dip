@@ -37,20 +37,16 @@ public class SimpleSchemaRegistryClient implements SchemaRegistryClient {
     @Override
     public String register(String topic, String schema) throws IOException, SchemaClientException {
         String path = String.format("/subjects/%s", new Object[]{topic});
-        //String jsonStrring = "{\"schema\" : \"" + schema + "\"}";
         String jsonStrring = "schema=" + schema;
 
-        Map<String,String> param = new HashMap<>();
+        Map<String, String> param = new HashMap<>();
         param.put("schema", schema);
-        System.out.println("------------------- " + jsonStrring);
-        RegisterSchemaRequest registerSchemaRequest = new RegisterSchemaRequest();
-        registerSchemaRequest.setSchema(schema);
-        System.out.println("------------------- " + registerSchemaRequest.toJson());
         String id = httpRequest(path, "POST", jsonStrring.getBytes(), param, ID_TYPE);
         return id;
     }
+
     @Override
-    public SchemaInfo getSchemaById(String topic, String id) throws IOException, SchemaClientException {
+    public SchemaInfo getSchemaByTopicAndId(String topic, String id) throws IOException, SchemaClientException {
         String path = String.format("/subjects/%s/ids/%s", new Object[]{topic, id});
         SchemaInfo schemaInfo = httpRequest(path, "GET", null, new HashMap<String, String>(), SCHEMAINFO_TYPE);
         return schemaInfo;
@@ -58,9 +54,16 @@ public class SimpleSchemaRegistryClient implements SchemaRegistryClient {
 
     @Override
     public SchemaInfo getLatestSchemaByTopic(String topic) throws IOException, SchemaClientException {
-        String path = String.format("/subjects/%s", new Object[]{topic});
+        String path = String.format("/schema/%s", new Object[]{topic});
         SchemaInfo schemaInfo = httpRequest(path, "GET", null, new HashMap<String, String>(), SCHEMAINFO_TYPE);
         return schemaInfo;
+    }
+
+    @Override
+    public List<SchemaInfo> getSchemaAllByTopic(String topic) throws IOException, SchemaClientException {
+        String path = String.format("/subjects/%s", new Object[]{topic});
+        List<SchemaInfo> schemaInfos = httpRequest(path, "GET", null, new HashMap<String, String>(), LIST_SCHMEAINFO_TYPE);
+        return schemaInfos;
     }
 
     @Override

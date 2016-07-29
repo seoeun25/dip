@@ -27,6 +27,8 @@ import java.util.Calendar;
                 "from SchemaInfo a where a.id = :id "),
         @NamedQuery(name = "GET_BYTOPICLATEST", query = "select a.name, a.id, a.schemaStr, a.created " +
                 "from SchemaInfo a where a.name = :name order by a.created desc "),
+        @NamedQuery(name = "GET_BYTOPICALL", query = "select a.name, a.id, a.schemaStr, a.created " +
+                "from SchemaInfo a where a.name = :name order by a.created desc "),
         @NamedQuery(name = "GET_BYTOPICANDID", query = "select a.name, a.id, a.schemaStr, a.created " +
                 "from SchemaInfo a where a.name = :name and a.id = :id "),
         @NamedQuery(name = "GET_ALL", query = "select a.name, a.id, a.schemaStr, a.created from SchemaInfo a where a.id " +
@@ -110,11 +112,6 @@ public class SchemaInfo {
         this.schemaStr = schemaStr;
     }
 
-    public Schema getSchema() {
-        Schema schema = new Schema.Parser().parse(schemaStr);
-        return schema;
-    }
-
     @JsonProperty("created")
     public Calendar getCreated() {
         return created;
@@ -123,6 +120,11 @@ public class SchemaInfo {
     @JsonProperty("created")
     public void setCreated(Calendar created) {
         this.created = created;
+    }
+
+    public Schema parseSchema() {
+        Schema schema = new Schema.Parser().parse(schemaStr);
+        return schema;
     }
 
     public String toJson() throws IOException {

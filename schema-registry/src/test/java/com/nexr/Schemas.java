@@ -30,6 +30,28 @@ public class Schemas {
             " ]\n" +
             "}";
     public static final String employee = "employee";
+    public static final String employee_schema_test = "{\"namespace\": \"com.nexr.dip.avro.schema\",\n" +
+            " \"type\": \"record\",\n" +
+            " \"name\": \"employee\",\n" +
+            " \"fields\": [\n" +
+            "     {\"name\": \"name\", \"type\": \"string\"},\n" +
+            "     {\"name\": \"favorite_number\", \"type\": [\"string\", \"null\"]},\n" +
+            "     {\"name\": \"favorite_color\", \"type\": [\"string\", \"null\"]},\n" +
+            "     {\"name\": \"wrk_dt\", \"type\": \"long\"},\n" +
+            "     {\"name\": \"src_info\", \"type\": \"string\"},\n" +
+            "     {\n" +
+            "         \"name\": \"header\",\n" +
+            "         \"type\": {\n" +
+            "             \"type\" : \"record\",\n" +
+            "             \"name\" : \"headertype\",\n" +
+            "             \"fields\" : [\n" +
+            "                 {\"name\": \"time\", \"type\": \"long\"}\n" +
+            "             ]\n" +
+            "         }\n" +
+            "      }\n" +
+            " ]\n" +
+            "}";
+
     public static final String employee_schema1 = "{\"namespace\": \"example.avro\",\n" +
             " \"type\": \"record\",\n" +
             " \"name\": \"User\",\n" +
@@ -40,29 +62,29 @@ public class Schemas {
             " ]\n" +
             "}";
 
-    //same schema - remove line delimiter
+    //same schema - remove line delimiter from employee_schema1
     public static final String employee_schema2 = "{\"namespace\": \"example.avro\", \"type\": \"record\",\"name\": \"User\", \"fields\": " +
-                "[{\"name\": \"name\", \"type\": \"string\"},{\"name\": \"favorite_number\", \"type\": [\"int\", \"null\"]},{\"name\": \"favorite_color\", \"type\": [\"string\", \"null\"]} ]}";
+            "[{\"name\": \"name\", \"type\": \"string\"},{\"name\": \"favorite_number\", \"type\": [\"int\", \"null\"]},{\"name\": \"favorite_color\", \"type\": [\"string\", \"null\"]} ]}";
 
     //different schema - namespace
     public static final String employee_schema3 = "{\"namespace\": \"example.hello\",\n" +
-                " \"type\": \"record\",\n" +
-                " \"name\": \"User\",\n" +
-                " \"fields\": [\n" +
-                "     {\"name\": \"name\", \"type\": \"string\"},\n" +
-                "     {\"name\": \"favorite_number\",  \"type\": [\"int\", \"null\"]},\n" +
-                "     {\"name\": \"favorite_color\", \"type\": [\"string\", \"null\"]}\n" +
-                " ]\n" +
-                "}";
+            " \"type\": \"record\",\n" +
+            " \"name\": \"User\",\n" +
+            " \"fields\": [\n" +
+            "     {\"name\": \"name\", \"type\": \"string\"},\n" +
+            "     {\"name\": \"favorite_number\",  \"type\": [\"int\", \"null\"]},\n" +
+            "     {\"name\": \"favorite_color\", \"type\": [\"string\", \"null\"]}\n" +
+            " ]\n" +
+            "}";
 
     // different schema - nullable
     public static final String employee_schema4 = "{\"namespace\": \"example.avro\",\n" +
-                " \"type\": \"record\",\n" +
-                " \"name\": \"User\",\n" +
-                " \"fields\": [\n" +
-                "     {\"name\": \"name\", \"type\": \"string\"},\n" +
-                "     {\"name\": \"favorite_number\",  \"type\": [\"int\", \"null\"]},\n" +
-                "     {\"name\": \"favorite_color\", \"type\": \"string\"}\n" +
-                " ]\n" +
-                "}";
+            " \"type\": \"record\",\n" +
+            " \"name\": \"User\",\n" +
+            " \"fields\": [\n" +
+            "     {\"name\": \"name\", \"type\": \"string\"},\n" +
+            "     {\"name\": \"favorite_number\",  \"type\": [\"int\", \"null\"]},\n" +
+            "     {\"name\": \"favorite_color\", \"type\": \"string\"}\n" +
+            " ]\n" +
+            "}";
 }

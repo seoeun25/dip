@@ -69,14 +69,15 @@ public class DipSchemaRepoClientTest {
         long currentTime = System.currentTimeMillis();
 
         try {
-            SchemaInfo schemaInfo = client.getSchemaBySubject(topicName);
+            SchemaInfo schemaInfo = client.getLatestSchemaByTopic(topicName);
             Assert.fail();
-        }catch (Exception e) {
+        } catch (Exception e) {
 
         }
 
-        try{
-            Assert.assertEquals(0, client.getSchemaLatestAll().size());
+        try {
+            Assert.assertEquals(0, client.getLatestSchemaAll().size());
+            Assert.assertEquals(0, client.getSchemaAllByTopic(topicName).size());
 
             String id = client.register(topicName, Schemas.employee_schema1);
             Assert.assertNotNull(id);
@@ -91,7 +92,7 @@ public class DipSchemaRepoClientTest {
 
             String ffttId = client.register(Schemas.ftth_if, Schemas.ftth_if_schema);
             // all subjects
-            List<SchemaInfo> schemaInfoList = client.getSchemaLatestAll();
+            List<SchemaInfo> schemaInfoList = client.getLatestSchemaAll();
 
             Assert.assertEquals(3, schemaInfoList.size());
 
@@ -104,15 +105,18 @@ public class DipSchemaRepoClientTest {
 
             Thread.sleep(100);
             // get by topic
-            Assert.assertEquals(Long.parseLong(id4), client.getSchemaBySubject(topicName).getId());
+            Assert.assertEquals(Long.parseLong(id4), client.getLatestSchemaByTopic(topicName).getId());
 
             // get by subject by id
-            Assert.assertNotNull(client.getSchemaBySubjectAndId(topicName, id3));
+            Assert.assertNotNull(client.getSchemaByTopicAndId(topicName, id3));
 
             Thread.sleep(1000);
 
+            Assert.assertEquals(3, client.getSchemaAllByTopic(topicName).size());
+
         } catch (Exception e) {
             e.printStackTrace();
+            Assert.fail();
         }
     }
 
@@ -120,7 +124,7 @@ public class DipSchemaRepoClientTest {
     public void testGetByTopic() {
 
         try {
-            SchemaInfo schemaInfo1 = client.getSchemaBySubject("not-exist");
+            SchemaInfo schemaInfo1 = client.getLatestSchemaByTopic("not-exist");
             Assert.fail();
         } catch (Exception e) {
         }

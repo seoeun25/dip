@@ -50,7 +50,7 @@ public class AvroSchemaRegistry implements SchemaRegistry<Schema> {
     public Schema getSchemaByID(String topicName, String id) {
         SchemaInfo schemaInfo = null;
         try {
-            schemaInfo = client.getSchemaBySubjectAndId(topicName, id);
+            schemaInfo = client.getSchemaByTopicAndId(topicName, id);
         } catch (Exception e) {
             throw new SchemaNotFoundException("Schema Not Found for [" + topicName + "], id[" + id + "]");
         }
@@ -61,7 +61,7 @@ public class AvroSchemaRegistry implements SchemaRegistry<Schema> {
     public SchemaDetails<Schema> getLatestSchemaByTopic(String topicName) {
         SchemaInfo schemaInfo = null;
         try {
-            schemaInfo = client.getSchemaBySubject(topicName);
+            schemaInfo = client.getLatestSchemaByTopic(topicName);
         } catch (Exception e) {
             throw new SchemaNotFoundException("Schema Not Found for [" + topicName + "]");
         }
@@ -70,7 +70,7 @@ public class AvroSchemaRegistry implements SchemaRegistry<Schema> {
 
     public List<SchemaInfo> getSchemaLatestAll(){
         try {
-            return client.getSchemaLatestAll();
+            return client.getLatestSchemaAll();
         }catch (Exception e) {
             return Collections.emptyList();
         }

@@ -5,7 +5,6 @@ import com.google.inject.Injector;
 import com.nexr.Schemas;
 import com.nexr.dip.DipException;
 import com.nexr.dip.jpa.JDBCService;
-import com.nexr.jpa.SchemaInfoQueryExceutor;
 import com.nexr.schemaregistry.SchemaInfo;
 import com.nexr.server.DipSchemaRepoServer;
 import junit.framework.Assert;
@@ -47,9 +46,9 @@ public class SchemaInfoQueryExecutorTest {
 
         try {
             SchemaInfo schemaInfo1 = new SchemaInfo(Schemas.employee, Schemas.employee_schema1);
-            long id1 = (Long) queryExecutor.insertR(schemaInfo1);
+            int id1 = (Integer) queryExecutor.insertR(schemaInfo1);
             SchemaInfo schemaInfo2 = new SchemaInfo(Schemas.employee, Schemas.employee_schema2);
-            long id2 = (Long) queryExecutor.insertR(schemaInfo2);
+            int id2 = (Integer) queryExecutor.insertR(schemaInfo2);
 
             Thread.sleep(100);
             List<SchemaInfo> all = queryExecutor.getList(SchemaInfoQueryExceutor.SchemaInfoQuery.GET_ALL, new Object[]{});
@@ -62,10 +61,10 @@ public class SchemaInfoQueryExecutorTest {
             Assert.assertEquals(new Schema.Parser().parse(schemaInfo1.getSchemaStr()), new Schema.Parser().parse(schemaInfo2.getSchemaStr()));
 
             SchemaInfo schemaInfo3 = new SchemaInfo(Schemas.employee, Schemas.employee_schema3);
-            long id3 = (Long) queryExecutor.insertR(schemaInfo3);
+            int id3 = (Integer) queryExecutor.insertR(schemaInfo3);
 
             SchemaInfo ftthInfo = new SchemaInfo(Schemas.ftth_if, Schemas.ftth_if_schema);
-            long id4 = (Long) queryExecutor.insertR(ftthInfo);
+            int id4 = (Integer) queryExecutor.insertR(ftthInfo);
             System.out.println("all latest id : " + id4);
 
 

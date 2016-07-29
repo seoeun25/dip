@@ -4,12 +4,12 @@
     <parent>
         <groupId>com.nexr</groupId>
         <artifactId>dip-parent</artifactId>
-        <version>1.1</version>
+        <version>1.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <groupId>com.nexr</groupId>
     <artifactId>dip-schema-registry-client</artifactId>
-    <version>1.1</version>
+    <version>1.1-SNAPSHOT</version>
     <description>SchemaRegistry Client</description>
     <name>dip-schema-registry-client</name>
     <packaging>jar</packaging>

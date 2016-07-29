@@ -23,13 +23,13 @@
     </properties>
 
     <modules>
-	<module>client</module>
+	    <module>client</module>
         <module>common</module>
         <module>example</module>
         <module>server</module>
         <module>tool</module>
-        <module>schema-registry</module>
         <module>schema-registry-client</module>
+        <module>schema-registry</module>
         <module>camus</module>
     </modules>
 
